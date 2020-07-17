@@ -14,14 +14,17 @@ extern crate postgres_types;
 extern crate serde_json;
 extern crate lettre;
 extern crate lettre_email;
+extern crate jsonwebtoken;
+
+mod models;
+mod views;
 
 /// Health checker
-#[get("/")]
+#[get("/ping")]
 pub fn get_health() -> String {
-    String::from("hi")
+    String::from("Server is alive!")
 }
 
-/// Respond Flow dataserver launch point.
 fn main() {
     dotenv::dotenv().ok();
     rocket::ignite()
