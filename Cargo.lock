@@ -379,6 +379,7 @@ dependencies = [
  "jsonwebtoken",
  "lettre",
  "lettre_email",
+ "log 0.4.11",
  "postgres",
  "postgres-types",
  "rocket",

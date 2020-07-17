@@ -60,7 +60,7 @@ pub fn generate_token(identifier: String, token_type: TokenType) -> Result<Strin
     ) {
         Ok(token) => Ok(token),
         Err(err) => {
-            eprintln!("{}", err.to_string());
+            error!("{}", err.to_string());
             return Err(String::from("Could not sign authentication token."));
         }
     }

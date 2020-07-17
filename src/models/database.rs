@@ -32,7 +32,7 @@ impl PGConnection {
         match Client::connect(connection_str.as_str(), NoTls) {
             Ok(client) => Ok(PGConnection { client }),
             Err(err) => {
-                eprintln!("{}", err);
+                error!("{}", err);
                 Err(String::from("Could not connect to postgres database"))
             }
         }
@@ -45,7 +45,7 @@ macro_rules! transaction {
         match (&mut $connection).transaction() {
             Ok(transaction) => transaction,
             Err(_) => {
-                eprintln!("Failed to get database transaction.");
+                error!("Failed to get database transaction.");
                 return StandardResponse {
                     status_code: Status::ServiceUnavailable,
                     json: json!({

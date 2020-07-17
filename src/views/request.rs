@@ -108,7 +108,7 @@ impl<'a, 'r> FromRequest<'a, 'r> for PGConnection {
         match PGConnection::connect() {
             Ok(connection) => Outcome::Success(connection),
             Err(err) => {
-                eprintln!("{}", err);
+                error!("{}", err);
                 Outcome::Failure((
                     Status::ServiceUnavailable,
                     FromRequestError::UnableToConnect,

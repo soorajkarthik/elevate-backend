@@ -7,6 +7,7 @@ repository = "https://github.com/soorajkarthik/ElevateBackend.git"
 
 [dependencies]
 dotenv = "0.15.0"
+log = "0.4.8"
 postgres = {version = "0.17.2", features = ["with-chrono-0_4", "with-serde_json-1"]}
 postgres-types = {version = "0.1.1", features = ["derive"]}
 rocket = "0.4.3"
