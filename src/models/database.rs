@@ -3,7 +3,7 @@ use std::env;
 use std::ops::{Deref, DerefMut};
 
 pub struct PGConnection {
-    pub client: Client
+    pub client: Client,
 }
 
 impl Deref for PGConnection {
@@ -20,8 +20,7 @@ impl DerefMut for PGConnection {
 }
 
 impl PGConnection {
-
-    pub fn connect () -> Result<Self, String> {
+    pub fn connect() -> Result<Self, String> {
         let connection_str = format!(
             "{}://{}:{}@{}/{}",
             env::var("DB_USER").unwrap(),
@@ -31,7 +30,7 @@ impl PGConnection {
             env::var("DB_DATABASE").unwrap()
         );
         match Client::connect(connection_str.as_str(), NoTls) {
-            Ok(client) => Ok(PGConnection {client}),
+            Ok(client) => Ok(PGConnection { client }),
             Err(err) => {
                 eprintln!("{}", err);
                 Err(String::from("Could not connect to postgres database"))

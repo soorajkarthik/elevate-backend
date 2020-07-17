@@ -1,19 +1,19 @@
-use jsonwebtoken::{encode, decode, Algorithm, Header, Validation};
-use serde::{Serialize, Deserialize};
+use chrono::{Duration, Utc};
+use jsonwebtoken::{decode, encode, Algorithm, Header, Validation};
+use serde::{Deserialize, Serialize};
 use std::env;
 use std::ops::Deref;
-use chrono::{Utc, Duration};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Claims {
     sub: String,
     iat: i64,
-    exp: i64
+    exp: i64,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct BearerToken {
-    pub token: String
+    pub token: String,
 }
 
 impl Deref for BearerToken {
@@ -27,24 +27,23 @@ impl Deref for BearerToken {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct BasicAuth {
     pub username: String,
-    pub password: Option<String>
+    pub password: Option<String>,
 }
 
 pub enum TokenType {
-    Auth
+    Auth,
 }
 
 #[macro_export]
 macro_rules! secret {
     ($token_type:expr) => {
         match $token_type {
-            TokenType::Auth => env::var("AUTH_SECRET").unwrap()
+            TokenType::Auth => env::var("AUTH_SECRET").unwrap(),
         }
     };
 }
 
 pub fn generate_token(identifier: String, token_type: TokenType) -> Result<String, String> {
-
     let secret = secret!(token_type);
 
     let now = Utc::now();
@@ -68,7 +67,6 @@ pub fn generate_token(identifier: String, token_type: TokenType) -> Result<Strin
 }
 
 pub fn validate_token(token: String, token_type: TokenType) -> Result<String, String> {
-
     let secret = secret!(token_type);
 
     match decode::<Claims>(

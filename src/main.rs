@@ -9,12 +9,12 @@ extern crate rocket_contrib;
 extern crate bcrypt;
 extern crate chrono;
 extern crate dotenv;
+extern crate jsonwebtoken;
+extern crate lettre;
+extern crate lettre_email;
 extern crate postgres;
 extern crate postgres_types;
 extern crate serde_json;
-extern crate lettre;
-extern crate lettre_email;
-extern crate jsonwebtoken;
 
 mod models;
 mod views;
@@ -27,9 +27,5 @@ pub fn get_health() -> String {
 
 fn main() {
     dotenv::dotenv().ok();
-    rocket::ignite()
-        .mount("/", routes![
-            get_health,
-        ])
-        .launch();
+    rocket::ignite().mount("/", routes![get_health,]).launch();
 }

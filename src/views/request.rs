@@ -1,5 +1,5 @@
-use rocket::http::{ContentType, Status};
 use rocket::http::hyper::header::Basic;
+use rocket::http::{ContentType, Status};
 use rocket::request::{self, FromRequest, Request};
 use rocket::response::{self, Responder, Response};
 use rocket::Outcome;
@@ -11,42 +11,39 @@ use crate::models::database::PGConnection;
 
 pub struct StandardResponse {
     pub status: Status,
-    pub response: JsonValue
+    pub response: JsonValue,
 }
 
 impl<'r> Responder<'r> for StandardResponse {
     fn respond_to(self, request: &Request) -> response::Result<'r> {
-        Response::build_from(
-                self.response.respond_to(request).unwrap()
-            )
+        Response::build_from(self.response.respond_to(request).unwrap())
             .status(self.status)
             .header(ContentType::JSON)
             .ok()
-    }   
+    }
 }
 
 #[derive(Debug)]
 pub enum FromRequestError {
-    InvalidToken, MissingToken, UnableToConnect
+    InvalidToken,
+    MissingToken,
+    UnableToConnect,
 }
 
 impl<'a, 'r> FromRequest<'a, 'r> for BasicAuth {
     type Error = FromRequestError;
 
     fn from_request(request: &'a Request<'r>) -> request::Outcome<Self, Self::Error> {
-
         let headers = request.headers();
 
         if headers.contains("Authorization") {
             let mut auth_list = headers.get("Authorization");
 
             if let Some(token) = auth_list.next() {
-                
                 let mut split_token = token.split_whitespace();
 
                 split_token.next();
                 match split_token.next() {
-
                     Some(token_value) => {
                         let basic_header = match Basic::from_str(token_value) {
                             Ok(header) => header,
@@ -63,7 +60,12 @@ impl<'a, 'r> FromRequest<'a, 'r> for BasicAuth {
                             password: basic_header.password,
                         });
                     }
-                    None => return Outcome::Failure((Status::BadRequest, FromRequestError::InvalidToken)),
+                    None => {
+                        return Outcome::Failure((
+                            Status::BadRequest,
+                            FromRequestError::InvalidToken,
+                        ))
+                    }
                 }
             }
         }
@@ -72,16 +74,13 @@ impl<'a, 'r> FromRequest<'a, 'r> for BasicAuth {
     }
 }
 
-
 impl<'a, 'r> FromRequest<'a, 'r> for BearerToken {
     type Error = FromRequestError;
 
     fn from_request(request: &'a Request<'r>) -> request::Outcome<Self, Self::Error> {
-        
         let headers = request.headers();
 
         if headers.contains("Authorization") {
-
             let mut auth_list = headers.get("Authorization");
 
             if let Some(token) = auth_list.next() {
@@ -89,13 +88,15 @@ impl<'a, 'r> FromRequest<'a, 'r> for BearerToken {
                 split_token.next();
 
                 if let Some(value) = split_token.next() {
-                    return Outcome::Success(BearerToken {token: String::from(value)});
+                    return Outcome::Success(BearerToken {
+                        token: String::from(value),
+                    });
                 } else {
-                    return Outcome::Failure((Status::BadRequest, FromRequestError::InvalidToken))
+                    return Outcome::Failure((Status::BadRequest, FromRequestError::InvalidToken));
                 }
             }
         }
-        
+
         Outcome::Failure((Status::BadRequest, FromRequestError::MissingToken))
     }
 }
@@ -108,7 +109,10 @@ impl<'a, 'r> FromRequest<'a, 'r> for PGConnection {
             Ok(connection) => Outcome::Success(connection),
             Err(err) => {
                 eprintln!("{}", err);
-                Outcome::Failure((Status::ServiceUnavailable, FromRequestError::UnableToConnect))
+                Outcome::Failure((
+                    Status::ServiceUnavailable,
+                    FromRequestError::UnableToConnect,
+                ))
             }
         }
     }
