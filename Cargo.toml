@@ -1,0 +1,19 @@
+[package]
+name = "elevate-backend"
+version = "0.1.0"
+authors = ["Sooraj Karthik <soorajkarthik15@gmail.com>"]
+edition = "2018"
+repository = "https://github.com/soorajkarthik/ElevateBackend.git"
+
+[dependencies]
+dotenv = "0.15.0"
+postgres = {version = "0.17.2", features = ["with-chrono-0_4", "with-serde_json-1"]}
+postgres-types = {version = "0.1.1", features = ["derive"]}
+rocket = "0.4.3"
+serde = {version = "1.0.1", features = ["derive"]}
+chrono = {version = "0.4", features = ["serde"]}
+rocket_contrib = {version = "0.4.4", default-features = false, features = ["json"]}
+bcrypt = "0.7"
+serde_json = "1.0"
+lettre = "0.9.2"
+lettre_email = "0.9.2"

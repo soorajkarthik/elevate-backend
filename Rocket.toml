@@ -1,0 +1,14 @@
+[global]
+address = "0.0.0.0"
+
+[development]
+port = 3333
+workers = 2
+keep_alive = 30
+log = "normal"
+
+[production]
+port = 9000
+workers = 3
+keep_alive = 30
+log = "normal"
