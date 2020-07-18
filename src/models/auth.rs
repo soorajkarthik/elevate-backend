@@ -1,8 +1,9 @@
-use chrono::{Duration, Utc};
-use jsonwebtoken::{decode, encode, Algorithm, Header, Validation};
-use serde::{Deserialize, Serialize};
 use std::env;
 use std::ops::Deref;
+
+use chrono::{Duration, Utc};
+use jsonwebtoken::{Algorithm, decode, encode, Header, Validation};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Claims {

@@ -1,11 +1,10 @@
-use postgres::Transaction;
-use serde::{Serialize, Deserialize};
+use bcrypt::{DEFAULT_COST, hash};
 use chrono::NaiveDateTime;
-use bcrypt::{hash, DEFAULT_COST};
+use postgres::Transaction;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct User {
-
     #[serde(skip_deserializing)]
     pub id: i64,
 
@@ -33,10 +32,9 @@ pub struct User {
     #[serde(rename = "createdAt")]
     pub created_at: Option<NaiveDateTime>,
 
-    
     #[serde(skip_deserializing)]
     #[serde(rename = "udpatedAt")]
-    pub updated_at: Option<NaiveDateTime>
+    pub updated_at: Option<NaiveDateTime>,
 }
 
 #[macro_export]
@@ -59,7 +57,6 @@ macro_rules! user {
 
 impl User {
     pub fn init(&self, transaction: &mut Transaction) -> Result<Self, String> {
-
         let password_hash = match hash(self.password.as_str(), DEFAULT_COST) {
             Ok(hash) => hash,
             Err(err) => return Err(err.to_string()),
@@ -74,7 +71,7 @@ impl User {
             ) values ($1, $2, $3, $4)
             on conflict (email) do nothing 
             returning *
-            ", &[&self.name, &self.email, &password_hash, &self.phone]
+            ", &[&self.name, &self.email, &password_hash, &self.phone],
         ) {
             Ok(row) => Ok(user!(row)),
             Err(err) => {
@@ -84,15 +81,14 @@ impl User {
         }
     }
 
-    pub fn update_location (&self, transaction: &mut Transaction) -> Result<Self, String> {
-
+    pub fn update_location(&self, transaction: &mut Transaction) -> Result<Self, String> {
         match transaction.query_one(
             "update users set 
             latitude = $1,
             longitude = $2
             where id = $3
             returning *
-            ", &[&self.latitude, &self.longitude, &self.id]
+            ", &[&self.latitude, &self.longitude, &self.id],
         ) {
             Ok(row) => Ok(user!(row)),
             Err(err) => {

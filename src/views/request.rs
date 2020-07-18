@@ -1,10 +1,11 @@
-use rocket::http::hyper::header::Basic;
+use std::str::FromStr;
+
 use rocket::http::{ContentType, Status};
+use rocket::http::hyper::header::Basic;
+use rocket::Outcome;
 use rocket::request::{self, FromRequest, Request};
 use rocket::response::{self, Responder, Response};
-use rocket::Outcome;
 use rocket_contrib::json::JsonValue;
-use std::str::FromStr;
 
 use crate::models::auth::{BasicAuth, BearerToken};
 use crate::models::database::PGConnection;
@@ -51,7 +52,7 @@ impl<'a, 'r> FromRequest<'a, 'r> for BasicAuth {
                                 return Outcome::Failure((
                                     Status::BadRequest,
                                     FromRequestError::InvalidToken,
-                                ))
+                                ));
                             }
                         };
 
@@ -64,7 +65,7 @@ impl<'a, 'r> FromRequest<'a, 'r> for BasicAuth {
                         return Outcome::Failure((
                             Status::BadRequest,
                             FromRequestError::InvalidToken,
-                        ))
+                        ));
                     }
                 }
             }
