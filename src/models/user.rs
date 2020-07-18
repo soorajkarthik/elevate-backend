@@ -19,6 +19,9 @@ pub struct User {
 
     pub phone: Option<String>,
 
+    #[serde(skip_deserializing)]
+    pub verified: bool,
+
     #[serde(rename = "acceptedLocationTracking")]
     pub accepted_location_tracking: bool,
 
@@ -40,6 +43,7 @@ macro_rules! user {
             email: $row.get("email"),
             password: $row.get("password"),
             phone: $row.get("phone"),
+            verified: $row.get("verified"),
             accepted_location_tracking: $row.get("accepted_location_tracking"),
             created_at: $row.get("created_at"),
             updated_at: $row.get("updated_at"),
@@ -98,7 +102,7 @@ impl User {
 
     pub fn from_email(email: String, transaction: &mut Transaction) -> Option<Self> {
         match transaction.query_one(
-            "select * from users where email = $1\
+            "select * from users where email = $1
             ", &[&email],
         ) {
             Ok(row) => Some(user!(row)),
