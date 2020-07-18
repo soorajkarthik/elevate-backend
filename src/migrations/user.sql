@@ -10,3 +10,10 @@ create table if not exists users (
     updated_at timestamp without time zone default now(),
     constraint unique_email unique (email)
 )
+
+create table if not exists tokens (
+    token text not null,
+    created_for text not null default 'internal',
+    created_at timestamp without time zone default now(),
+    updated_at timestamp without time zone default now()
+)

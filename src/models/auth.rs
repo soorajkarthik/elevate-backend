@@ -4,6 +4,7 @@ use std::ops::Deref;
 use chrono::{Duration, Utc};
 use jsonwebtoken::{Algorithm, decode, encode, Header, Validation};
 use serde::{Deserialize, Serialize};
+use postgres::Transaction;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Claims {
@@ -33,6 +34,7 @@ pub struct BasicAuth {
 
 pub enum TokenType {
     Auth,
+    Verification,
 }
 
 #[macro_export]
@@ -40,6 +42,7 @@ macro_rules! secret {
     ($token_type:expr) => {
         match $token_type {
             TokenType::Auth => env::var("AUTH_SECRET").unwrap(),
+            TokenType::Verification => env::var("VERIFICATION_SECRET").unwrap(),
         }
     };
 }
@@ -79,3 +82,7 @@ pub fn validate_token(token: String, token_type: TokenType) -> Result<String, St
         Err(err) => Err(err.to_string()),
     }
 }
+
+pub fn store_token(token: String, token_type: TokenType, created_for: String, transaction: &mut Transaction) -> Result<String, String> {}
+
+pub fn retrieve_token(token: String)
