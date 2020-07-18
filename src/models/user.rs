@@ -3,6 +3,8 @@ use chrono::NaiveDateTime;
 use postgres::Transaction;
 use serde::{Deserialize, Serialize};
 
+use crate::models::auth::{BearerToken, TokenType, validate_token};
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct User {
     #[serde(skip_deserializing)]
@@ -16,14 +18,6 @@ pub struct User {
     pub password: String,
 
     pub phone: Option<String>,
-
-    #[serde(skip_serializing)]
-    #[serde(skip_deserializing)]
-    pub longitude: Option<f32>,
-
-    #[serde(skip_serializing)]
-    #[serde(skip_deserializing)]
-    pub latitude: Option<f32>,
 
     #[serde(rename = "acceptedLocationTracking")]
     pub accepted_location_tracking: bool,
@@ -46,11 +40,23 @@ macro_rules! user {
             email: $row.get("email"),
             password: $row.get("password"),
             phone: $row.get("phone"),
-            latitude: $row.get("latitude"),
-            longitude: $row.get("longitude"),
             accepted_location_tracking: $row.get("accepted_location_tracking"),
             created_at: $row.get("created_at"),
             updated_at: $row.get("updated_at"),
+        }
+    };
+}
+
+macro_rules! fetch_user {
+    ($token:expr, $token_type:expr, $transaction:expr) => {
+        match User::from_token($token, $token_type, $transaction) {
+            Some(user) => user,
+            None => return StandardResponse {
+                status: Status::BadRequest,
+                response: json!({
+                    "message": "User not found or token is invalid"
+                })
+            }
         }
     };
 }
@@ -81,19 +87,24 @@ impl User {
         }
     }
 
-    pub fn update_location(&self, transaction: &mut Transaction) -> Result<Self, String> {
+    pub fn from_token(token: String, token_type: TokenType, transaction: &mut Transaction) -> Option<Self> {
+        let user_email = match validate_token(token, token_type) {
+            Ok(data) => data,
+            Err(_) => return None
+        };
+
+        Self::from_email(user_email, transaction)
+    }
+
+    pub fn from_email(email: String, transaction: &mut Transaction) -> Option<Self> {
         match transaction.query_one(
-            "update users set 
-            latitude = $1,
-            longitude = $2
-            where id = $3
-            returning *
-            ", &[&self.latitude, &self.longitude, &self.id],
+            "select * from users where email = $1\
+            ", &[&email],
         ) {
-            Ok(row) => Ok(user!(row)),
+            Ok(row) => Some(user!(row)),
             Err(err) => {
                 error!("{}", err);
-                Err(String::from("Couldn't create new user"))
+                None
             }
         }
     }
