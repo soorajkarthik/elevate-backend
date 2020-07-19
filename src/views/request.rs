@@ -24,6 +24,15 @@ impl<'r> Responder<'r> for StandardResponse {
     }
 }
 
+/// Health checker
+#[get("/ping")]
+pub fn get_health() -> StandardResponse {
+    StandardResponse {
+        status: Status::Ok,
+        response: json!("Server is alive!"),
+    }
+}
+
 #[derive(Debug)]
 pub enum FromRequestError {
     InvalidToken,

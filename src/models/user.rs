@@ -22,9 +22,6 @@ pub struct User {
     #[serde(skip_deserializing)]
     pub verified: bool,
 
-    #[serde(rename = "acceptedLocationTracking")]
-    pub accepted_location_tracking: bool,
-
     #[serde(skip_deserializing)]
     #[serde(rename = "createdAt")]
     pub created_at: Option<NaiveDateTime>,
@@ -44,7 +41,6 @@ macro_rules! user {
             password: $row.get("password"),
             phone: $row.get("phone"),
             verified: $row.get("verified"),
-            accepted_location_tracking: $row.get("accepted_location_tracking"),
             created_at: $row.get("created_at"),
             updated_at: $row.get("updated_at"),
         }
@@ -78,7 +74,7 @@ impl User {
                 name,
                 email,
                 password,
-                phone,
+                phone
             ) values ($1, $2, $3, $4)
             on conflict (email) do nothing 
             returning *
@@ -119,8 +115,9 @@ impl User {
             "update users set
                 verified = true,
                 updated_at = now()
-                where id = $1",
-            &[&self.id],
+            where id = $1
+            returning *
+            ", &[&self.id],
         ) {
             Ok(row) => Ok(user!(row)),
             Err(err) => {

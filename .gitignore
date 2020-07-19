@@ -1,4 +1,11 @@
+# Build files
 /target
-.env
+
+# IntelliJ config files
 /.idea
 
+# App environment files
+.env
+
+# App logging files
+*.log

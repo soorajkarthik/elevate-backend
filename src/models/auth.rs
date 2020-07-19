@@ -85,8 +85,8 @@ pub fn validate_token(token: String, token_type: TokenType) -> Result<String, St
 
 pub fn store_token(token: String, token_type: TokenType, created_for: String, transaction: &mut Transaction) -> Result<String, String> {
     match transaction.query(
-        "delete from tokens where created_at < now() - interval '1 day'",
-        &[],
+        "delete from tokens where created_at < now() - interval '7 days'
+        ", &[],
     ) {
         Ok(rows) => rows.iter().for_each(|row| info!("Deleted expired token {}", row.get::<usize, String>(0))),
         Err(err) => error!("Error while deleting expired tokens: {}", err)
@@ -103,8 +103,8 @@ pub fn store_token(token: String, token_type: TokenType, created_for: String, tr
             token_type,
             created_for
         ) values ($1, $2, $3)
-        returning token",
-        &[&token, &token_type_text, &created_for],
+        returning token
+        ", &[&token, &token_type_text, &created_for],
     ) {
         Ok(row) => Ok(row.get(0)),
         Err(err) => {
@@ -116,8 +116,11 @@ pub fn store_token(token: String, token_type: TokenType, created_for: String, tr
 
 pub fn retrieve_token(token: String, transaction: &mut Transaction) -> Option<String> {
     match transaction.query_one(
-        "delete from tokens where token = $1 returning token",
-        &[&token],
+        "delete from tokens
+            where token = $1
+            and created_at > now() - interval '1 day'
+        returning token
+        ", &[&token],
     ) {
         Ok(row) => Some(row.get(0)),
         Err(err) => {

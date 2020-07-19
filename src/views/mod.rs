@@ -1,13 +1,14 @@
 use std::env;
-use lettre_email::EmailBuilder;
+
 use lettre::{SmtpClient, Transport};
 use lettre::smtp::authentication::IntoCredentials;
+use lettre_email::EmailBuilder;
 
 pub mod request;
 pub mod user;
 
 pub fn send_email(to: String, subject: String, message: String) -> Result<String, String> {
-    let smtp_address = env::var("SMTP_ADDRESS").unwrap();
+    let smtp_server = env::var("SMTP_SERVER").unwrap();
     let username = env::var("NO_REPLY_EMAIL").unwrap();
     let password = env::var("NO_REPLY_PASSWORD").unwrap();
     let email = match EmailBuilder::new()
@@ -21,7 +22,7 @@ pub fn send_email(to: String, subject: String, message: String) -> Result<String
     };
 
     let credentials = (username, password).into_credentials();
-    let mut client = match SmtpClient::new_simple(smtp_address.as_str()) {
+    let mut client = match SmtpClient::new_simple(smtp_server.as_str()) {
         Ok(client) => client.credentials(credentials).transport(),
         Err(_) => return Err(String::from("Couldn't connect to smtp client"))
     };

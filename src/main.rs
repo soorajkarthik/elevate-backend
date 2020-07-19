@@ -4,6 +4,7 @@
 extern crate bcrypt;
 extern crate chrono;
 extern crate dotenv;
+extern crate fern;
 extern crate jsonwebtoken;
 extern crate lettre;
 extern crate lettre_email;
@@ -17,32 +18,39 @@ extern crate rocket;
 extern crate rocket_contrib;
 extern crate serde_json;
 
-use rocket::http::Status;
-
-use crate::views::request::StandardResponse;
-
 mod models;
 mod views;
 
-/// Health checker
-#[get("/ping")]
-pub fn get_health() -> StandardResponse {
-    StandardResponse {
-        status: Status::Ok,
-        response: json!("Server is alive!"),
-    }
+fn setup_logger() -> Result<(), fern::InitError> {
+    fern::Dispatch::new()
+        .format(|out, message, record| {
+            out.finish(format_args!(
+                "{}[{}][{}] {}",
+                chrono::Utc::now().format("[%Y-%m-%d][%H:%M:%S]"),
+                record.target(),
+                record.level(),
+                message
+            ))
+        })
+        .level(log::LevelFilter::Debug)
+        .chain(std::io::stdout())
+        .chain(fern::log_file("output.log")?)
+        .apply()?;
+    Ok(())
 }
 
 fn main() {
     dotenv::dotenv().ok();
+    setup_logger().expect("Couldn't set up logger");
     rocket::ignite()
         .mount("/", routes![
-            get_health
+            views::request::get_health
         ])
         .mount("/users", routes![
             views::user::login,
             views::user::create_user,
-            views::user::verify_email
+            views::user::verify_email,
+            views::user::send_verification_email
         ])
         .launch();
 }

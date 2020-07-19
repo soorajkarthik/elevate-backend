@@ -376,6 +376,7 @@ dependencies = [
  "bcrypt",
  "chrono",
  "dotenv",
+ "fern",
  "jsonwebtoken",
  "lettre",
  "lettre_email",
@@ -486,6 +487,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "495a39d30d624c2caabe6312bfead73e7717692b44e0b32df168c275a2e8e9e4"
 dependencies = [
  "ascii_utils",
+]
+
+[[package]]
+name = "fern"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8c9a4820f0ccc8a7afd67c39a0f1a0f4b07ca1725164271a64939d7aeb9af065"
+dependencies = [
+ "log 0.4.11",
 ]
 
 [[package]]
