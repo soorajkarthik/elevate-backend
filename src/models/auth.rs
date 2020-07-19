@@ -3,8 +3,8 @@ use std::ops::Deref;
 
 use chrono::{Duration, Utc};
 use jsonwebtoken::{Algorithm, decode, encode, Header, Validation};
-use serde::{Deserialize, Serialize};
 use postgres::Transaction;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Claims {
@@ -74,7 +74,7 @@ pub fn validate_token(token: String, token_type: TokenType) -> Result<String, St
     let secret = secret!(token_type);
 
     match decode::<Claims>(
-        &token,
+        token.as_str(),
         secret.as_str().as_ref(),
         &Validation::new(Algorithm::HS256),
     ) {
@@ -83,6 +83,46 @@ pub fn validate_token(token: String, token_type: TokenType) -> Result<String, St
     }
 }
 
-pub fn store_token(token: String, token_type: TokenType, created_for: String, transaction: &mut Transaction) -> Result<String, String> {}
+pub fn store_token(token: String, token_type: TokenType, created_for: String, transaction: &mut Transaction) -> Result<String, String> {
+    match transaction.query(
+        "delete from tokens where created_at < now() - interval '1 day'",
+        &[],
+    ) {
+        Ok(rows) => rows.iter().for_each(|row| info!("Deleted expired token {}", row.get::<usize, String>(0))),
+        Err(err) => error!("Error while deleting expired tokens: {}", err)
+    }
 
-pub fn retrieve_token(token: String)
+    let token_type_text = match token_type {
+        TokenType::Verification => String::from("email verification"),
+        _ => String::from("other") // Should never happen
+    };
+
+    match transaction.query_one(
+        "insert into tokens (
+            token,
+            token_type,
+            created_for
+        ) values ($1, $2, $3)
+        returning token",
+        &[&token, &token_type_text, &created_for],
+    ) {
+        Ok(row) => Ok(row.get(0)),
+        Err(err) => {
+            error!("{}", err);
+            Err(String::from(""))
+        }
+    }
+}
+
+pub fn retrieve_token(token: String, transaction: &mut Transaction) -> Option<String> {
+    match transaction.query_one(
+        "delete from tokens where token = $1 returning token",
+        &[&token],
+    ) {
+        Ok(row) => Some(row.get(0)),
+        Err(err) => {
+            error!("{}", err);
+            None
+        }
+    }
+}

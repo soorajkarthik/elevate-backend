@@ -48,8 +48,8 @@ macro_rules! transaction {
             Err(_) => {
                 error!("Failed to get database transaction.");
                 return StandardResponse {
-                    status_code: Status::ServiceUnavailable,
-                    json: json!({
+                    status: Status::ServiceUnavailable,
+                    response: json!({
                         "message": "The server is currently unavailable."
                     })
                 };

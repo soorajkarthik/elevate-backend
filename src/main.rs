@@ -36,6 +36,13 @@ pub fn get_health() -> StandardResponse {
 fn main() {
     dotenv::dotenv().ok();
     rocket::ignite()
-        .mount("/", routes![get_health])
+        .mount("/", routes![
+            get_health
+        ])
+        .mount("/users", routes![
+            views::user::login,
+            views::user::create_user,
+            views::user::verify_email
+        ])
         .launch();
 }

@@ -3,7 +3,7 @@ use chrono::NaiveDateTime;
 use postgres::Transaction;
 use serde::{Deserialize, Serialize};
 
-use crate::models::auth::{BearerToken, TokenType, validate_token};
+use crate::models::auth::{TokenType, validate_token};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct User {
@@ -51,6 +51,7 @@ macro_rules! user {
     };
 }
 
+#[macro_export]
 macro_rules! fetch_user {
     ($token:expr, $token_type:expr, $transaction:expr) => {
         match User::from_token($token, $token_type, $transaction) {
@@ -109,6 +110,22 @@ impl User {
             Err(err) => {
                 error!("{}", err);
                 None
+            }
+        }
+    }
+
+    pub fn verify_email(&self, transaction: &mut Transaction) -> Result<Self, String> {
+        match transaction.query_one(
+            "update users set
+                verified = true,
+                updated_at = now()
+                where id = $1",
+            &[&self.id],
+        ) {
+            Ok(row) => Ok(user!(row)),
+            Err(err) => {
+                error!("{}", err);
+                Err(String::from("Could not update user verification status"))
             }
         }
     }
