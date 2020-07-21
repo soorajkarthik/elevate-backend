@@ -47,3 +47,39 @@ impl AlertType {
         }
     }
 }
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Alert {
+
+    #[serde(skip_deserializing)]
+    pub id: i64,
+
+    #[serde(rename = "alertType")]
+    #[serde(skip_serializing)]
+    pub alert_type: String,
+
+    #[serde(rename = "alertType")]
+    #[serde(skip_deserializing)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub alert_type_obj: Option<AlertType>,
+
+    pub description: Option<String>,
+
+    #[serde(skip_deserializing)]
+    pub place: String,
+
+    pub latitude: f32,
+
+    pub longitude: f32,
+
+    #[serde(rename = "createdBy")]
+    pub created_by: String,
+
+    #[serde(rename = "createdAt")]
+    #[serde(skip_deserializing)]
+    pub created_at: Option<NaiveDateTime>,
+
+    #[serde(rename = "updatedAt")]
+    #[serde(skip_deserializing)]
+    pub updated_at: Option<NaiveDateTime>,
+}
