@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Location {
     #[serde(rename = "userId")]
+    #[serde(skip_deserializing)]
     pub user_id: i64,
 
     pub latitude: f32,
@@ -28,7 +29,7 @@ macro_rules! location {
             latitude: $row.get("latitude"),
             longitude: $row.get("longitude"),
             created_at: $row.get("created_at"),
-            updated_at: $row.get("updated_at")
+            updated_at: $row.get("updated_at"),
         }
     };
 }
@@ -47,7 +48,8 @@ impl Location {
                 longitude = excluded.longitude,
                 updated_at = now()
             returning *
-            ", &[&self.user_id, &self.latitude, &self.longitude],
+            ",
+            &[&self.user_id, &self.latitude, &self.longitude],
         ) {
             Ok(row) => Ok(location!(row)),
             Err(err) => {

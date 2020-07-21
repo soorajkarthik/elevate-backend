@@ -1,6 +1,5 @@
 use std::env;
 use std::ops::{Deref, DerefMut};
-
 use postgres::{Client, NoTls};
 
 pub struct PGConnection {

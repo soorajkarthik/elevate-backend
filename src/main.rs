@@ -43,14 +43,18 @@ fn main() {
     dotenv::dotenv().ok();
     setup_logger().expect("Couldn't set up logger");
     rocket::ignite()
-        .mount("/", routes![
-            views::request::get_health
-        ])
-        .mount("/users", routes![
-            views::user::login,
-            views::user::create_user,
-            views::user::verify_email,
-            views::user::send_verification_email
-        ])
+        .mount("/", routes![views::request::get_health])
+        .mount(
+            "/users",
+            routes![
+                views::user::login,
+                views::user::create_user,
+                views::user::verify_email,
+                views::user::send_verification_email,
+                views::location::update_user_location,
+                views::location::get_location
+            ],
+        )
+        .mount("/alerts", routes![views::alert::get_alert_types])
         .launch();
 }

@@ -1,10 +1,10 @@
-use bcrypt::{DEFAULT_COST, hash};
+use bcrypt::{hash, DEFAULT_COST};
 use chrono::NaiveDateTime;
 use postgres::Transaction;
 use serde::{Deserialize, Serialize};
 
 use crate::location;
-use crate::models::auth::{TokenType, validate_token};
+use crate::models::auth::{validate_token, TokenType};
 use crate::models::location::Location;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -80,7 +80,8 @@ impl User {
             ) values ($1, $2, $3, $4)
             on conflict (email) do nothing 
             returning *
-            ", &[&self.name, &self.email, &password_hash, &self.phone],
+            ",
+            &[&self.name, &self.email, &password_hash, &self.phone],
         ) {
             Ok(row) => Ok(user!(row)),
             Err(err) => {
@@ -90,10 +91,14 @@ impl User {
         }
     }
 
-    pub fn from_token(token: String, token_type: TokenType, transaction: &mut Transaction) -> Option<Self> {
+    pub fn from_token(
+        token: String,
+        token_type: TokenType,
+        transaction: &mut Transaction,
+    ) -> Option<Self> {
         let user_email = match validate_token(token, token_type) {
             Ok(data) => data,
-            Err(_) => return None
+            Err(_) => return None,
         };
 
         Self::from_email(user_email, transaction)
@@ -102,7 +107,8 @@ impl User {
     pub fn from_email(email: String, transaction: &mut Transaction) -> Option<Self> {
         match transaction.query_one(
             "select * from users where email = $1
-            ", &[&email],
+            ",
+            &[&email],
         ) {
             Ok(row) => Some(user!(row)),
             Err(err) => {
@@ -119,7 +125,8 @@ impl User {
                 updated_at = now()
             where id = $1
             returning *
-            ", &[&self.id],
+            ",
+            &[&self.id],
         ) {
             Ok(row) => Ok(user!(row)),
             Err(err) => {
@@ -132,7 +139,8 @@ impl User {
     pub fn get_location(&self, transaction: &mut Transaction) -> Option<Location> {
         match transaction.query_one(
             "select * from locations where user_id = $1
-            ", &[&self.id],
+            ",
+            &[&self.id],
         ) {
             Ok(row) => Some(location!(row)),
             Err(err) => {

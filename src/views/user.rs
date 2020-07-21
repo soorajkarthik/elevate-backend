@@ -1,15 +1,13 @@
-use std::fs::read_to_string;
-
-use bcrypt::verify;
-use rocket::http::Status;
-use rocket_contrib::json::Json;
-
-use crate::{fetch_user, send_email_using_file, transaction};
-use crate::models::auth::{BasicAuth, BearerToken, generate_token, retrieve_token, store_token, TokenType};
+use crate::models::auth::*;
 use crate::models::database::PGConnection;
 use crate::models::user::User;
 use crate::views::request::StandardResponse;
 use crate::views::send_email;
+use crate::{fetch_user, send_email_using_file, transaction};
+use bcrypt::verify;
+use rocket::http::Status;
+use rocket_contrib::json::Json;
+use std::fs::read_to_string;
 
 #[post("/login")]
 pub fn login(auth: BasicAuth, mut connection: PGConnection) -> StandardResponse {
@@ -17,11 +15,13 @@ pub fn login(auth: BasicAuth, mut connection: PGConnection) -> StandardResponse 
 
     let user = match User::from_email(auth.username.clone(), &mut transaction) {
         Some(user) => user,
-        None => return StandardResponse {
-            status: Status::BadRequest,
-            response: json!({
-                "message": format!("No user found with email: {}", auth.username)
-            }),
+        None => {
+            return StandardResponse {
+                status: Status::BadRequest,
+                response: json!({
+                    "message": format!("No user found with email: {}", auth.username)
+                }),
+            }
         }
     };
 
@@ -29,7 +29,11 @@ pub fn login(auth: BasicAuth, mut connection: PGConnection) -> StandardResponse 
         return StandardResponse {
             status: Status::PreconditionRequired,
             response: json!({
-                "message": format!("Please verify your account using the link we sent to: {}", user.email.as_str())
+                "message":
+                    format!(
+                        "Please verify your account using the link we sent to: {}",
+                        user.email.as_str()
+                    )
             }),
         };
     }
@@ -94,21 +98,29 @@ pub fn create_user(user_init: Json<User>, mut connection: PGConnection) -> Stand
 
     let new_user = match user_init.init(&mut transaction) {
         Ok(user) => user,
-        Err(_) => return StandardResponse {
-            status: Status::BadRequest,
-            response: json!({
-                "message": format!("User already registered with email {}", user_init.email.as_str())
-            }),
+        Err(_) => {
+            return StandardResponse {
+                status: Status::BadRequest,
+                response: json!({
+                    "message":
+                        format!(
+                            "User already registered with email {}",
+                            user_init.email.as_str()
+                        )
+                }),
+            }
         }
     };
 
     let verification_token = match generate_token(new_user.email.clone(), TokenType::Verification) {
         Ok(token) => token,
-        Err(_) => return StandardResponse {
-            status: Status::UnprocessableEntity,
-            response: json!({
-                "message": "Could not generate email verification token"
-            }),
+        Err(_) => {
+            return StandardResponse {
+                status: Status::UnprocessableEntity,
+                response: json!({
+                    "message": "Could not generate email verification token"
+                }),
+            }
         }
     };
 
@@ -119,11 +131,13 @@ pub fn create_user(user_init: Json<User>, mut connection: PGConnection) -> Stand
         &mut transaction,
     ) {
         Ok(token) => token,
-        Err(_) => return StandardResponse {
-            status: Status::UnprocessableEntity,
-            response: json!({
-                "message": "Could not store email verification token"
-            }),
+        Err(_) => {
+            return StandardResponse {
+                status: Status::UnprocessableEntity,
+                response: json!({
+                    "message": "Could not store email verification token"
+                }),
+            }
         }
     };
 
@@ -147,14 +161,12 @@ pub fn create_user(user_init: Json<User>, mut connection: PGConnection) -> Stand
             }
         }
 
-        Err(_) => {
-            StandardResponse {
-                status: Status::ServiceUnavailable,
-                response: json!({
-                    "message": "Unable to commit changes to database"
-                }),
-            }
-        }
+        Err(_) => StandardResponse {
+            status: Status::ServiceUnavailable,
+            response: json!({
+                "message": "Unable to commit changes to database"
+            }),
+        },
     }
 }
 
@@ -164,11 +176,13 @@ pub fn verify_email(token: BearerToken, mut connection: PGConnection) -> Standar
 
     let token = match retrieve_token(token.token, &mut transaction) {
         Some(token) => token,
-        None => return StandardResponse {
-            status: Status::BadRequest,
-            response: json!({
-                "message": "Token has expired or as already been used"
-            }),
+        None => {
+            return StandardResponse {
+                status: Status::BadRequest,
+                response: json!({
+                    "message": "Token has expired or as already been used"
+                }),
+            }
         }
     };
 
@@ -176,11 +190,13 @@ pub fn verify_email(token: BearerToken, mut connection: PGConnection) -> Standar
 
     let user = match user.verify_email(&mut transaction) {
         Ok(user) => user,
-        Err(_) => return StandardResponse {
-            status: Status::UnprocessableEntity,
-            response: json!({
-                "message": "Could not verify user email"
-            }),
+        Err(_) => {
+            return StandardResponse {
+                status: Status::UnprocessableEntity,
+                response: json!({
+                    "message": "Could not verify user email"
+                }),
+            }
         }
     };
 
@@ -193,14 +209,12 @@ pub fn verify_email(token: BearerToken, mut connection: PGConnection) -> Standar
             }),
         },
 
-        Err(_) => {
-            StandardResponse {
-                status: Status::ServiceUnavailable,
-                response: json!({
-                    "message": "Unable to commit changes to database"
-                }),
-            }
-        }
+        Err(_) => StandardResponse {
+            status: Status::ServiceUnavailable,
+            response: json!({
+                "message": "Unable to commit changes to database"
+            }),
+        },
     }
 }
 
@@ -210,21 +224,23 @@ pub fn send_verification_email(email: String, mut connection: PGConnection) -> S
 
     let user = match User::from_email(email.clone(), &mut transaction) {
         Some(user) => user,
-        None => return StandardResponse {
-            status: Status::BadRequest,
-            response: json!({
-                "message": format!("No user found with email: {}", &email)
-            }),
+        None => {
+            return StandardResponse {
+                status: Status::BadRequest,
+                response: json!({ "message": format!("No user found with email: {}", &email) }),
+            }
         }
     };
 
     let verification_token = match generate_token(user.email.clone(), TokenType::Verification) {
         Ok(token) => token,
-        Err(_) => return StandardResponse {
-            status: Status::UnprocessableEntity,
-            response: json!({
-                "message": "Could not generate email verification token"
-            }),
+        Err(_) => {
+            return StandardResponse {
+                status: Status::UnprocessableEntity,
+                response: json!({
+                    "message": "Could not generate email verification token"
+                }),
+            }
         }
     };
 
@@ -235,11 +251,13 @@ pub fn send_verification_email(email: String, mut connection: PGConnection) -> S
         &mut transaction,
     ) {
         Ok(token) => token,
-        Err(_) => return StandardResponse {
-            status: Status::UnprocessableEntity,
-            response: json!({
-                "message": "Could not store email verification token"
-            }),
+        Err(_) => {
+            return StandardResponse {
+                status: Status::UnprocessableEntity,
+                response: json!({
+                    "message": "Could not store email verification token"
+                }),
+            }
         }
     };
 
@@ -262,13 +280,11 @@ pub fn send_verification_email(email: String, mut connection: PGConnection) -> S
             }
         }
 
-        Err(_) => {
-            StandardResponse {
-                status: Status::ServiceUnavailable,
-                response: json!({
-                    "message": "Unable to commit changes to database"
-                }),
-            }
-        }
+        Err(_) => StandardResponse {
+            status: Status::ServiceUnavailable,
+            response: json!({
+                "message": "Unable to commit changes to database"
+            }),
+        },
     }
 }
