@@ -3,7 +3,9 @@ use chrono::NaiveDateTime;
 use postgres::Transaction;
 use serde::{Deserialize, Serialize};
 
+use crate::location;
 use crate::models::auth::{TokenType, validate_token};
+use crate::models::location::Location;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct User {
@@ -123,6 +125,19 @@ impl User {
             Err(err) => {
                 error!("{}", err);
                 Err(String::from("Could not update user verification status"))
+            }
+        }
+    }
+
+    pub fn get_location(&self, transaction: &mut Transaction) -> Option<Location> {
+        match transaction.query_one(
+            "select * from locations where user_id = $1
+            ", &[&self.id],
+        ) {
+            Ok(row) => Some(location!(row)),
+            Err(err) => {
+                error!("{}", err);
+                None
             }
         }
     }

@@ -8,12 +8,6 @@ create table if not exists users (
     created_at timestamp without time zone default now(),
     updated_at timestamp without time zone default now(),
     constraint unique_email unique (email)
-)
+);
 
-create table if not exists tokens (
-    token text not null,
-    token_type text not null default 'internal use',
-    created_for text not null default 'internal',
-    created_at timestamp without time zone default now(),
-    updated_at timestamp without time zone default now()
-)
+create index user_email_index on users (email);
