@@ -18,6 +18,7 @@ pub struct AlertType {
     pub updated_at: Option<NaiveDateTime>,
 }
 
+#[macro_export]
 macro_rules! alert_type {
     ($row:expr) => {
         AlertType {
@@ -46,11 +47,24 @@ impl AlertType {
             }
         }
     }
+
+    pub fn get_by_name(name: &String, transaction: &mut Transaction) -> Option<Self> {
+        match transaction.query_one(
+            "select * from alert_types where name = $1
+            ",
+            &[name],
+        ) {
+            Ok(row) => Some(alert_type!(row)),
+            Err(err) => {
+                error!("{}", err);
+                None
+            }
+        }
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Alert {
-
     #[serde(skip_deserializing)]
     pub id: i64,
 
@@ -60,7 +74,6 @@ pub struct Alert {
 
     #[serde(rename = "alertType")]
     #[serde(skip_deserializing)]
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub alert_type_obj: Option<AlertType>,
 
     pub description: Option<String>,
@@ -75,6 +88,9 @@ pub struct Alert {
     #[serde(rename = "createdBy")]
     pub created_by: String,
 
+    #[serde(rename = "isResolved")]
+    pub is_resolved: bool,
+
     #[serde(rename = "createdAt")]
     #[serde(skip_deserializing)]
     pub created_at: Option<NaiveDateTime>,
@@ -82,4 +98,121 @@ pub struct Alert {
     #[serde(rename = "updatedAt")]
     #[serde(skip_deserializing)]
     pub updated_at: Option<NaiveDateTime>,
+}
+
+#[macro_export]
+macro_rules! alert {
+    ($row:expr) => {
+        Alert {
+            id: $row.get("id"),
+            alert_type: $row.get("alert_type"),
+            alert_type_obj: None,
+            description: $row.get("description"),
+            place: $row.get("place"),
+            latitude: $row.get("latitude"),
+            longitude: $row.get("longitude"),
+            created_by: $row.get("created_by"),
+            is_resolved: $row.get("is_resolved"),
+            created_at: $row.get("created_at"),
+            updated_at: $row.get("updated_at"),
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! alert_filled {
+    ($row:expr) => {
+        let mut alert = alert!(row);
+        alert.fill(transaction);
+        Ok(alert)
+    };
+}
+
+impl Alert {
+    pub fn init(&self, transaction: &mut Transaction) -> Result<Self, String> {
+        match transaction.query_one(
+            "insert into alerts (
+                alert_type,
+                description,
+                place,
+                latitude,
+                longitude,
+                created_by
+            ) values ($1, $2, $3, $4, $5, $6)
+            returning *
+            ",
+            &[
+                &self.alert_type,
+                &self.description,
+                &self.place,
+                &self.latitude,
+                &self.longitude,
+                &self.created_by,
+            ],
+        ) {
+            Ok(row) => {
+                let mut alert = alert!(row);
+                alert.fill(transaction);
+                Ok(alert)
+            }
+            Err(err) => {
+                error!("{}", err);
+                Err(String::from("Could not initialize alert"))
+            }
+        }
+    }
+
+    pub fn delete(&self, transaction: &mut Transaction) -> Result<Self, String> {
+        match transaction.query_one(
+            "delete from alerts where id = $1
+            ",
+            &[&self.id],
+        ) {
+            Ok(row) => {
+                let mut alert = alert!(row);
+                alert.fill(transaction);
+                Ok(alert)
+            }
+            Err(err) => {
+                error!("{}", err);
+                Err(String::from("Could not delete alert"))
+            }
+        }
+    }
+
+    pub fn update(&self, transaction: &mut Transaction) -> Result<Self, String> {
+        match transaction.query_one(
+            "update alerts set
+                alert_type = $1,
+                description = $2,
+                place = $3, 
+                latitude = $4, 
+                longitude = $5
+            where id = $6 
+            returning *
+            ",
+            &[
+                &self.alert_type,
+                &self.description,
+                &self.place,
+                &self.latitude,
+                &self.longitude,
+                &self.id,
+            ],
+        ) {
+            Ok(row) => {
+                let mut alert = alert!(row);
+                alert.fill(transaction);
+                Ok(alert)
+            }
+            Err(err) => {
+                error!("{}", err);
+                Err(String::from("Could not delete alert"))
+            }
+        }
+    }
+
+    pub fn fill(&mut self, transaction: &mut Transaction) {
+        self.alert_type_obj = AlertType::get_by_name(&self.alert_type, transaction);
+    }
 }

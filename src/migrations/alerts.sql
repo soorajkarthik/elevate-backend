@@ -15,8 +15,10 @@ insert into alert_types (name, alert_level) values
 ('Garage Sale', 3);
 
 create table if not exists alerts (
+    id bigserial primary key,
     alert_type text not null references alert_types (name),
     description text not null default 'none provided',
+    place text not null,
     latitude real not null,
     longitude real not null,
     created_by text not null default 'internal',
