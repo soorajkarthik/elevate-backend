@@ -119,22 +119,6 @@ macro_rules! alert {
     };
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct TokenDistanceWrapper {
-    pub firebase_device_token: String,
-    pub distance: f32,
-}
-
-#[macro_export]
-macro_rules! token_distance_wrapper {
-    ($row:expr) => {
-        TokenDistanceWrapper {
-            firebase_device_token: $row.get("token"),
-            distance: $row.get("calculate_distance"),
-        }
-    };
-}
-
 pub const LAT_LNG_VIEW_PORT: f32 = 0.145; // 0.145 degrees ~ 10 miles
 
 impl Alert {
@@ -261,9 +245,9 @@ impl Alert {
         self.alert_type_obj = AlertType::get_by_name(&self.alert_type, transaction);
     }
 
-    pub fn near_by_user_tokens(&self, transaction: &mut Transaction) -> Vec<TokenDistanceWrapper> {
+    pub fn near_by_user_tokens(&self, transaction: &mut Transaction) -> Vec<String> {
         match transaction.query(
-            "select fdt.token, calculate_distance($1, $2, l.latitude, l.longitude) from firebase_device_tokens fdt
+            "select fdt.token from firebase_device_tokens fdt
             inner join locations l
                 on  fdt.user_id = l.user_id
             where 
@@ -273,7 +257,7 @@ impl Alert {
                 and l.longitude < $2 + $3
             ", &[&self.latitude, &self.longitude, &LAT_LNG_VIEW_PORT]
         ) {
-            Ok(rows) => rows.iter().map(|row| token_distance_wrapper!(row)).collect::<Vec<TokenDistanceWrapper>>(),
+            Ok(rows) => rows.iter().map(|row| row.get(0)).collect::<Vec<String>>(),
             Err(err) => {
                 error!("{}", err);
                 Vec::new()

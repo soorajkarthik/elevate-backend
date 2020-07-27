@@ -45,16 +45,16 @@ pub fn create_alert(
         }
     };
 
-    let user_token_distances = alert.near_by_user_tokens(&mut transaction);
+    let user_tokens = alert.near_by_user_tokens(&mut transaction);
 
     match transaction.commit() {
         Ok(_) => {
-            let count = send_alert_notification(&alert, user_token_distances);
+            let count = send_alert_notification(&alert, user_tokens);
 
             StandardResponse {
                 status: Status::Ok,
                 response: json!({
-                    "message": format!("Alert successfully created, notified nearby {} users", count),
+                    "message": format!("Alert successfully created, notified {} nearby users", count),
                     "alert": alert
                 }),
             }
