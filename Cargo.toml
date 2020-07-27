@@ -3,20 +3,21 @@ name = "elevate-backend"
 version = "0.1.0"
 authors = ["Sooraj Karthik <soorajkarthik15@gmail.com>"]
 edition = "2018"
-repository = "https://github.com/soorajkarthik/ElevateBackend.git"
+repository = "https://github.com/soorajkarthik/elevate-backend.git"
 
 [dependencies]
-dotenv = "0.15.0"
-log = "0.4.8"
-fern = "0.6.0"
-postgres = {version = "0.17.2", features = ["with-chrono-0_4", "with-serde_json-1"]}
-postgres-types = {version = "0.1.1", features = ["derive"]}
-rocket = "0.4.3"
-serde = {version = "1.0.1", features = ["derive"]}
-chrono = {version = "0.4", features = ["serde"]}
-rocket_contrib = {version = "0.4.4", default-features = false, features = ["json"]}
 bcrypt = "0.7"
-serde_json = "1.0"
+chrono = { version = "0.4", features = ["serde"] }
+dotenv = "0.15.0"
+fern = "0.6.0"
+jsonwebtoken = "5"
 lettre = "0.9.2"
 lettre_email = "0.9.2"
-jsonwebtoken = "5"
+log = "0.4.8"
+postgres = { version = "0.17.2", features = ["with-chrono-0_4", "with-serde_json-1"] }
+postgres-types = { version = "0.1.1", features = ["derive"] }
+reqwest={ version = "0.10.7", features = ["json", "blocking"] }
+rocket = "0.4.3"
+rocket_contrib = { version = "0.4.4", default-features = false, features = ["json"] }
+serde = { version = "1.0.1", features = ["derive"] }
+serde_json = "1.0"

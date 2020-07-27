@@ -12,6 +12,7 @@ extern crate lettre_email;
 extern crate log;
 extern crate postgres;
 extern crate postgres_types;
+extern crate reqwest;
 #[macro_use]
 extern crate rocket;
 #[macro_use]
@@ -19,6 +20,7 @@ extern crate rocket_contrib;
 extern crate serde_json;
 
 mod models;
+mod services;
 mod views;
 
 fn setup_logger() -> Result<(), fern::InitError> {
@@ -55,6 +57,15 @@ fn main() {
                 views::location::get_location
             ],
         )
-        .mount("/alerts", routes![views::alert::get_alert_types])
+        .mount(
+            "/alerts",
+            routes![
+                views::alert::get_alert_types,
+                views::alert::create_alert,
+                views::alert::update_alert,
+                views::alert::resolve_alert,
+                views::alert::delete_alert
+            ],
+        )
         .launch();
 }

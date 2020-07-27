@@ -119,14 +119,23 @@ macro_rules! alert {
     };
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct TokenDistanceWrapper {
+    pub firebase_device_token: String,
+    pub distance: f32,
+}
+
 #[macro_export]
-macro_rules! alert_filled {
+macro_rules! token_distance_wrapper {
     ($row:expr) => {
-        let mut alert = alert!(row);
-        alert.fill(transaction);
-        Ok(alert)
+        TokenDistanceWrapper {
+            firebase_device_token: $row.get("token"),
+            distance: $row.get("calculate_distance"),
+        }
     };
 }
+
+pub const LAT_LNG_VIEW_PORT: f32 = 0.145; // 0.145 degrees ~ 10 miles
 
 impl Alert {
     pub fn init(&self, transaction: &mut Transaction) -> Result<Self, String> {
@@ -152,7 +161,7 @@ impl Alert {
         ) {
             Ok(row) => {
                 let mut alert = alert!(row);
-                alert.fill(transaction);
+                alert.populate(transaction);
                 Ok(alert)
             }
             Err(err) => {
@@ -170,7 +179,7 @@ impl Alert {
         ) {
             Ok(row) => {
                 let mut alert = alert!(row);
-                alert.fill(transaction);
+                alert.populate(transaction);
                 Ok(alert)
             }
             Err(err) => {
@@ -187,7 +196,8 @@ impl Alert {
                 description = $2,
                 place = $3, 
                 latitude = $4, 
-                longitude = $5
+                longitude = $5,
+                updated_at = now()
             where id = $6 
             returning *
             ",
@@ -202,7 +212,7 @@ impl Alert {
         ) {
             Ok(row) => {
                 let mut alert = alert!(row);
-                alert.fill(transaction);
+                alert.populate(transaction);
                 Ok(alert)
             }
             Err(err) => {
@@ -212,7 +222,62 @@ impl Alert {
         }
     }
 
-    pub fn fill(&mut self, transaction: &mut Transaction) {
+    pub fn get_by_id(id: i64, transaction: &mut Transaction) -> Option<Alert> {
+        match transaction.query_one(
+            "select * from alerts where id = $1
+            ",
+            &[&id],
+        ) {
+            Ok(row) => {
+                let mut alert = alert!(row);
+                alert.populate(transaction);
+                Some(alert)
+            }
+            Err(err) => {
+                error!("{}", err);
+                None
+            }
+        }
+    }
+
+    pub fn resolve(&self, transaction: &mut Transaction) -> Result<Self, String> {
+        match transaction.query_one(
+            "update alerts set 
+                is_resolved = true,
+                updated_at = now()
+            where id = $1
+            ",
+            &[&self.id],
+        ) {
+            Ok(row) => Ok(alert!(row)),
+            Err(err) => {
+                error!("{}", err);
+                Err(String::from("Could not mark alert as resolved"))
+            }
+        }
+    }
+
+    pub fn populate(&mut self, transaction: &mut Transaction) {
         self.alert_type_obj = AlertType::get_by_name(&self.alert_type, transaction);
+    }
+
+    pub fn near_by_user_tokens(&self, transaction: &mut Transaction) -> Vec<TokenDistanceWrapper> {
+        match transaction.query(
+            "select fdt.token, calculate_distance($1, $2, l.latitude, l.longitude) from firebase_device_tokens fdt
+            inner join locations l
+                on  fdt.user_id = l.user_id
+            where 
+                l.latitude > $1 - $3
+                and l.latitude < $1 + $3
+                and l.longitude > $2 - $3
+                and l.longitude < $2 + $3
+            ", &[&self.latitude, &self.longitude, &LAT_LNG_VIEW_PORT]
+        ) {
+            Ok(rows) => rows.iter().map(|row| token_distance_wrapper!(row)).collect::<Vec<TokenDistanceWrapper>>(),
+            Err(err) => {
+                error!("{}", err);
+                Vec::new()
+            }
+        }
     }
 }
