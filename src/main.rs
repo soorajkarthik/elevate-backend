@@ -45,6 +45,14 @@ fn main() {
     dotenv::dotenv().ok();
     setup_logger().expect("Couldn't set up logger");
     rocket::ignite()
+        .register(catchers![
+            views::catchers::internal_error,
+            views::catchers::not_found,
+            views::catchers::service_error,
+            views::catchers::unprocessable_entity,
+            views::catchers::unauthorized,
+            views::catchers::bad_request,
+        ])
         .mount("/", routes![views::request::get_health])
         .mount(
             "/users",
