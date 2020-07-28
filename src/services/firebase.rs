@@ -20,7 +20,7 @@ struct FirebaseMultiCastResponse {
 }
 
 pub fn send_alert_notification(alert: &Alert, user_tokens: Vec<String>) -> i64 {
-    let api_key = env::var("GOOGLE_CLOUD_API_KEY");
+    let api_key = env::var("FIREBASE_MESSAGING_SERVER_KEY");
 
     if let Ok(api_key) = api_key {
         let client = Client::new();
