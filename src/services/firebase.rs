@@ -34,6 +34,8 @@ pub fn send_alert_notification(alert: &Alert, user_tokens: Vec<String>) -> i64 {
             }
         });
 
+        debug!("Notification payload: {:#?}", payload);
+
         let response = client.post(&url).json(&payload).bearer_auth(api_key).send();
         match response {
             Ok(response) => {
