@@ -27,16 +27,22 @@ pub fn get_address(latitude: f32, longitude: f32) -> String {
                 // Get response as raw JSON
                 let json_value: Value = response_json.unwrap();
 
-                // Get the first location result, results ordered by distance asc.
-                match json_value["results"]["locations"].get(0) {
-                    Some(value) => {
-                        return format!(
-                            "{}, {}, {}, {}",
-                            value["street"],     // Street address
-                            value["adminArea5"], // City
-                            value["adminArea3"], // State
-                            value["adminArea1"]  // Country
-                        );
+                // Try to get the results
+                match json_value["results"].get(0) {
+                    Some(json_value) => {
+                        // Get the first location result, results are ordered by distance asc.
+                        match json_value["locations"].get(0) {
+                            Some(value) => {
+                                return format!(
+                                    "{}, {}, {}, {}", // Strip strings of quotes
+                                    value["street"].as_str().unwrap().replace("\"", ""), // Street address
+                                    value["adminArea5"].as_str().unwrap().replace("\"", ""), // City
+                                    value["adminArea3"].as_str().unwrap().replace("\"", ""), // State
+                                    value["adminArea1"].as_str().unwrap().replace("\"", "") // Country
+                                );
+                            }
+                            None => return String::new(),
+                        }
                     }
                     None => return String::new(),
                 }
