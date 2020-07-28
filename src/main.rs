@@ -64,7 +64,8 @@ fn main() {
                 views::alert::create_alert,
                 views::alert::update_alert,
                 views::alert::resolve_alert,
-                views::alert::delete_alert
+                views::alert::delete_alert,
+                views::alert::get_by_viewport
             ],
         )
         .launch();

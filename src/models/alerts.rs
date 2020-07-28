@@ -245,7 +245,7 @@ impl Alert {
         self.alert_type_obj = AlertType::get_by_name(&self.alert_type, transaction);
     }
 
-    pub fn near_by_user_tokens(&self, transaction: &mut Transaction) -> Vec<String> {
+    pub fn nearby_user_tokens(&self, transaction: &mut Transaction) -> Vec<String> {
         match transaction.query(
             "select fdt.token from firebase_device_tokens fdt
             inner join locations l
@@ -255,9 +255,42 @@ impl Alert {
                 and l.latitude < $1 + $3
                 and l.longitude > $2 - $3
                 and l.longitude < $2 + $3
-            ", &[&self.latitude, &self.longitude, &LAT_LNG_VIEW_PORT]
+            ",
+            &[&self.latitude, &self.longitude, &LAT_LNG_VIEW_PORT],
         ) {
             Ok(rows) => rows.iter().map(|row| row.get(0)).collect::<Vec<String>>(),
+            Err(err) => {
+                error!("{}", err);
+                Vec::new()
+            }
+        }
+    }
+
+    pub fn get_by_viewport(
+        ne_lat: f32,
+        ne_lng: f32,
+        sw_lat: f32,
+        sw_lng: f32,
+        transaction: &mut Transaction,
+    ) -> Vec<Self> {
+        match transaction.query(
+            "select * from alerts where 
+                latitude < $1
+                and longitude < $2
+                and latitude > $3
+                and longitude > $4
+            ",
+            &[&ne_lat, &ne_lng, &sw_lat, &sw_lng],
+        ) {
+            Ok(rows) => {
+                let mut res = Vec::new();
+                for row in rows {
+                    let mut alert = alert!(row);
+                    alert.populate(transaction);
+                    res.push(alert);
+                }
+                res
+            }
             Err(err) => {
                 error!("{}", err);
                 Vec::new()

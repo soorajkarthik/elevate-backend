@@ -45,7 +45,7 @@ pub fn create_alert(
         }
     };
 
-    let user_tokens = alert.near_by_user_tokens(&mut transaction);
+    let user_tokens = alert.nearby_user_tokens(&mut transaction);
 
     match transaction.commit() {
         Ok(_) => {
@@ -263,5 +263,29 @@ pub fn delete_alert(
                 }),
             }
         }
+    }
+}
+
+#[get("/?<ne_lat>&<ne_lng>&<sw_lat>&<sw_lng>")]
+pub fn get_by_viewport(
+    ne_lat: f32,
+    ne_lng: f32,
+    sw_lat: f32,
+    sw_lng: f32,
+    token: BearerToken,
+    mut connection: PGConnection,
+) -> StandardResponse {
+    let mut transaction = transaction!(connection);
+    fetch_user!(token.token, TokenType::Auth, &mut transaction);
+
+    StandardResponse {
+        status: Status::Ok,
+        response: json!(Alert::get_by_viewport(
+            ne_lat,
+            ne_lng,
+            sw_lat,
+            sw_lng,
+            &mut transaction
+        )),
     }
 }
