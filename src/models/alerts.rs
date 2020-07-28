@@ -86,9 +86,11 @@ pub struct Alert {
     pub longitude: f32,
 
     #[serde(rename = "createdBy")]
+    #[serde(skip_deserializing)]
     pub created_by: String,
 
     #[serde(rename = "isResolved")]
+    #[serde(skip_deserializing)]
     pub is_resolved: bool,
 
     #[serde(rename = "createdAt")]
@@ -158,6 +160,7 @@ impl Alert {
     pub fn delete(&self, transaction: &mut Transaction) -> Result<Self, String> {
         match transaction.query_one(
             "delete from alerts where id = $1
+            returning *
             ",
             &[&self.id],
         ) {
@@ -230,6 +233,7 @@ impl Alert {
                 is_resolved = true,
                 updated_at = now()
             where id = $1
+            returning *
             ",
             &[&self.id],
         ) {
@@ -251,10 +255,10 @@ impl Alert {
             inner join locations l
                 on  fdt.user_id = l.user_id
             where 
-                l.latitude > $1 - $3
-                and l.latitude < $1 + $3
-                and l.longitude > $2 - $3
-                and l.longitude < $2 + $3
+                l.latitude > $1::real - $3::real
+                and l.latitude < $1::real + $3::real
+                and l.longitude > $2::real - $3::real
+                and l.longitude < $2::real + $3::real
             ",
             &[&self.latitude, &self.longitude, &LAT_LNG_VIEW_PORT],
         ) {
