@@ -1,9 +1,9 @@
-use std::env;
-use std::ops::Deref;
 use chrono::{Duration, Utc};
 use jsonwebtoken::{decode, encode, Algorithm, Header, Validation};
 use postgres::Transaction;
 use serde::{Deserialize, Serialize};
+use std::env;
+use std::ops::Deref;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Claims {
