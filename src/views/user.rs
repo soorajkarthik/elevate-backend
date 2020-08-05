@@ -146,7 +146,7 @@ pub fn create_user(user_init: Json<User>, mut connection: PGConnection) -> Stand
             send_email_using_file!(
                 new_user.email.as_str(),
                 "Welcome to Elevate! Please verify your email.",
-                "../emails/welcome.html",
+                "src/emails/welcome.html",
                 "{}",
                 verification_token.as_str()
             );
@@ -266,7 +266,7 @@ pub fn send_verification_email(email: String, mut connection: PGConnection) -> S
             send_email_using_file!(
                 user.email.as_str(),
                 "Please verify your email.",
-                "../emails/verification.html",
+                "src/emails/verification.html",
                 "{}",
                 verification_token.as_str()
             );
@@ -292,12 +292,24 @@ pub fn send_verification_email(email: String, mut connection: PGConnection) -> S
 pub fn request_password_reset(email: String, mut connection: PGConnection) -> StandardResponse {
     let mut transaction = transaction!(connection);
 
-    if User::from_email(email.clone(), &mut transaction).is_none() {
-        return StandardResponse {
-            status: Status::BadRequest,
-            response: json!({ "message": format!("No user found with email: {}", &email) }),
-        };
-    }
+    let user = match User::from_email(email.clone(), &mut transaction) {
+        Some(user) => user,
+        None => {
+            return StandardResponse {
+                status: Status::BadRequest,
+                response: json!({ "message": format!("No user found with email: {}", &email) }),
+            }
+        }
+    };
+
+    // if !user.verified {
+    //     return StandardResponse {
+    //         status: Status::PreconditionRequired,
+    //         response: json!({
+    //             "message": "Your email address has not yet been verified"
+    //         }),
+    //     };
+    // }
 
     let token = match generate_token(email.clone(), TokenType::PasswordReset) {
         Ok(token) => token,
@@ -333,7 +345,7 @@ pub fn request_password_reset(email: String, mut connection: PGConnection) -> St
             send_email_using_file!(
                 email.as_str(),
                 "Password Reset Request",
-                "../emails/password_reset_request.html",
+                "src/emails/password_reset_request.html",
                 "{}",
                 token.as_str()
             );
@@ -380,13 +392,13 @@ pub fn reset_password(auth: BasicAuth, mut connection: PGConnection) -> Standard
         }
     };
 
-    let user = match User::from_email(email, &mut transaction) {
+    let user = match User::from_email(email.clone(), &mut transaction) {
         Some(user) => user,
         None => {
             return StandardResponse {
                 status: Status::BadRequest,
                 response: json!({
-                    "message": format!("Could not find user with email: {}", &email)
+                    "message": format!("Could not find user with email: {}", email)
                 }),
             }
         }
@@ -418,7 +430,7 @@ pub fn reset_password(auth: BasicAuth, mut connection: PGConnection) -> Standard
             send_email_using_file!(
                 user.email.as_str(),
                 "Your Elevate Password was Reset",
-                "../emails/password_reset_confirmation.html",
+                "src/emails/password_reset_confirmation.html",
                 "Your password was reset"
             );
 

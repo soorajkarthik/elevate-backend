@@ -61,6 +61,8 @@ fn main() {
                 views::user::create_user,
                 views::user::verify_email,
                 views::user::send_verification_email,
+                views::user::request_password_reset,
+                views::user::reset_password,
                 views::location::update_user_location,
                 views::location::get_location
             ],

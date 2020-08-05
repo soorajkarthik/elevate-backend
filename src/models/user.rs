@@ -162,6 +162,7 @@ impl User {
 
         match transaction.query_one(
             "update users set password = $1 where id = $2
+            returning *
             ",
             &[&password_hash, &self.id],
         ) {
