@@ -146,7 +146,7 @@ pub fn create_user(user_init: Json<User>, mut connection: PGConnection) -> Stand
             send_email_using_file!(
                 new_user.email.as_str(),
                 "Welcome to Elevate! Please verify your email.",
-                "/emails/welcome.html",
+                "../emails/welcome.html",
                 "{}",
                 verification_token.as_str()
             );
@@ -266,7 +266,7 @@ pub fn send_verification_email(email: String, mut connection: PGConnection) -> S
             send_email_using_file!(
                 user.email.as_str(),
                 "Please verify your email.",
-                "/emails/verification.html",
+                "../emails/verification.html",
                 "{}",
                 verification_token.as_str()
             );
@@ -276,6 +276,157 @@ pub fn send_verification_email(email: String, mut connection: PGConnection) -> S
                 response: json!({
                     "message": format!("Verification email sent to {}", user.email.as_str()),
                     "verificationToken": verification_token
+                }),
+            }
+        }
+
+        Err(_) => StandardResponse {
+            status: Status::ServiceUnavailable,
+            response: json!({
+                "message": "Unable to commit changes to database"
+            }),
+        },
+    }
+}
+#[get("/pwordReset?<email>")]
+pub fn request_password_reset(email: String, mut connection: PGConnection) -> StandardResponse {
+    let mut transaction = transaction!(connection);
+
+    if User::from_email(email.clone(), &mut transaction).is_none() {
+        return StandardResponse {
+            status: Status::BadRequest,
+            response: json!({ "message": format!("No user found with email: {}", &email) }),
+        };
+    }
+
+    let token = match generate_token(email.clone(), TokenType::PasswordReset) {
+        Ok(token) => token,
+        Err(_) => {
+            return StandardResponse {
+                status: Status::UnprocessableEntity,
+                response: json!({
+                    "message": "Could not generate reset token"
+                }),
+            }
+        }
+    };
+
+    let token = match store_token(
+        token,
+        TokenType::PasswordReset,
+        email.clone(),
+        &mut transaction,
+    ) {
+        Ok(token) => token,
+        Err(_) => {
+            return StandardResponse {
+                status: Status::UnprocessableEntity,
+                response: json!({
+                    "message": "Could not store reset token"
+                }),
+            }
+        }
+    };
+
+    match transaction.commit() {
+        Ok(_) => {
+            send_email_using_file!(
+                email.as_str(),
+                "Password Reset Request",
+                "../emails/password_reset_request.html",
+                "{}",
+                token.as_str()
+            );
+
+            StandardResponse {
+                status: Status::Ok,
+                response: json!({ "message": format!("Reset email has been sent to {}", &email) }),
+            }
+        }
+        Err(_) => StandardResponse {
+            status: Status::ServiceUnavailable,
+            response: json!({
+                "message": "Unable to commit changes to database"
+            }),
+        },
+    }
+}
+
+#[post("/pwordReset")]
+pub fn reset_password(auth: BasicAuth, mut connection: PGConnection) -> StandardResponse {
+    let mut transaction = transaction!(connection);
+
+    let token = match retrieve_token(auth.username, &mut transaction) {
+        Some(token) => token,
+        None => {
+            return StandardResponse {
+                status: Status::BadRequest,
+                response: json!({
+                    "message": "Token has expired or has already been used"
+                }),
+            }
+        }
+    };
+
+    let email = match validate_token(token, TokenType::PasswordReset) {
+        Ok(email) => email,
+        Err(_) => {
+            return StandardResponse {
+                status: Status::BadRequest,
+                response: json!({
+                    "message": "Unable to verify reset token"
+                }),
+            }
+        }
+    };
+
+    let user = match User::from_email(email, &mut transaction) {
+        Some(user) => user,
+        None => {
+            return StandardResponse {
+                status: Status::BadRequest,
+                response: json!({
+                    "message": format!("Could not find user with email: {}", &email)
+                }),
+            }
+        }
+    };
+
+    if auth.password.is_none() {
+        return StandardResponse {
+            status: Status::BadRequest,
+            response: json!({
+                "message": "Please provide a new valid password"
+            }),
+        };
+    }
+
+    if user
+        .reset_password(auth.password.unwrap(), &mut transaction)
+        .is_err()
+    {
+        return StandardResponse {
+            status: Status::UnprocessableEntity,
+            response: json!({
+                "message": "Could not reset user's password"
+            }),
+        };
+    }
+
+    match transaction.commit() {
+        Ok(_) => {
+            send_email_using_file!(
+                user.email.as_str(),
+                "Your Elevate Password was Reset",
+                "../emails/password_reset_confirmation.html",
+                "Your password was reset"
+            );
+
+            StandardResponse {
+                status: Status::Ok,
+                response: json!({
+                    "message": "Successfully reset user's password",
+                    "user": user
                 }),
             }
         }

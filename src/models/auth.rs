@@ -34,6 +34,7 @@ pub struct BasicAuth {
 pub enum TokenType {
     Auth,
     Verification,
+    PasswordReset,
 }
 
 #[macro_export]
@@ -42,6 +43,7 @@ macro_rules! secret {
         match $token_type {
             TokenType::Auth => env::var("AUTH_SECRET").unwrap(),
             TokenType::Verification => env::var("VERIFICATION_SECRET").unwrap(),
+            TokenType::PasswordReset => env::var("PASSWORD_RESET_SECRET").unwrap(),
         }
     };
 }
@@ -101,6 +103,7 @@ pub fn store_token(
 
     let token_type_text = match token_type {
         TokenType::Verification => String::from("email verification"),
+        TokenType::PasswordReset => String::from("password reset"),
         _ => String::from("other"), // Should never happen
     };
 

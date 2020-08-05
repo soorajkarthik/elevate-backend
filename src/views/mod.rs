@@ -6,6 +6,7 @@ use std::env;
 pub mod alert;
 pub mod catchers;
 pub mod location;
+pub mod pages;
 pub mod request;
 pub mod user;
 

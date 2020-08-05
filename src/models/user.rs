@@ -149,4 +149,27 @@ impl User {
             }
         }
     }
+
+    pub fn reset_password(
+        &self,
+        password: String,
+        transaction: &mut Transaction,
+    ) -> Result<Self, String> {
+        let password_hash = match hash(password.as_str(), DEFAULT_COST) {
+            Ok(hash) => hash,
+            Err(err) => return Err(err.to_string()),
+        };
+
+        match transaction.query_one(
+            "update users set password = $1 where id = $2
+            ",
+            &[&password_hash, &self.id],
+        ) {
+            Ok(row) => Ok(user!(row)),
+            Err(err) => {
+                error!("{}", err);
+                Err(String::from("Could not reset user's password"))
+            }
+        }
+    }
 }
