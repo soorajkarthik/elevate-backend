@@ -302,14 +302,14 @@ pub fn request_password_reset(email: String, mut connection: PGConnection) -> St
         }
     };
 
-    // if !user.verified {
-    //     return StandardResponse {
-    //         status: Status::PreconditionRequired,
-    //         response: json!({
-    //             "message": "Your email address has not yet been verified"
-    //         }),
-    //     };
-    // }
+    if !user.verified {
+        return StandardResponse {
+            status: Status::PreconditionRequired,
+            response: json!({
+                "message": "Your email address has not yet been verified"
+            }),
+        };
+    }
 
     let token = match generate_token(email.clone(), TokenType::PasswordReset) {
         Ok(token) => token,
