@@ -17,11 +17,17 @@ extern crate reqwest;
 extern crate rocket;
 #[macro_use]
 extern crate rocket_contrib;
+extern crate rocket_cors;
+#[macro_use]
+extern crate rocket_include_static_resources;
 extern crate serde_json;
 
 mod models;
 mod services;
 mod views;
+
+use rocket_cors::{catch_all_options_routes, Cors, CorsOptions};
+use rocket_include_static_resources::StaticResponse;
 
 fn setup_logger() -> Result<(), fern::InitError> {
     fern::Dispatch::new()
@@ -41,9 +47,14 @@ fn setup_logger() -> Result<(), fern::InitError> {
     Ok(())
 }
 
+fn setup_cors() -> Result<Cors, rocket_cors::Error> {
+    CorsOptions::default().to_cors() // Using default cors. Restrict access later
+}
+
 fn main() {
     dotenv::dotenv().ok();
     setup_logger().expect("Couldn't set up logger");
+    let cors = setup_cors().expect("Couldn't generate CORS");
     rocket::ignite()
         .register(catchers![
             views::catchers::internal_error,
@@ -53,7 +64,15 @@ fn main() {
             views::catchers::unauthorized,
             views::catchers::bad_request,
         ])
-        .mount("/", routes![views::request::get_health])
+        .mount(
+            "/",
+            routes![
+                views::request::get_health,
+                views::pages::favicon,
+                views::pages::favicon_png,
+                views::pages::banner
+            ],
+        )
         .mount(
             "/users",
             routes![
@@ -78,5 +97,20 @@ fn main() {
                 views::alert::get_by_viewport
             ],
         )
+        .mount("/pages", routes![])
+        .mount("/", catch_all_options_routes())
+        .manage(cors.clone())
+        .attach(cors)
+        .attach(StaticResponse::fairing(|resources| {
+            static_resources_initialize!(
+                resources,
+                "favicon",
+                "src/assets/icon.ico",
+                "favicon-png",
+                "src/assets/icon.png",
+                "banner",
+                "src/assets/banner.png"
+            );
+        }))
         .launch();
 }
