@@ -68,9 +68,9 @@ fn main() {
             "/",
             routes![
                 views::request::get_health,
-                views::pages::favicon,
-                views::pages::favicon_png,
-                views::pages::banner
+                views::assets::favicon,
+                views::assets::favicon_png,
+                views::assets::banner
             ],
         )
         .mount(
@@ -97,19 +97,37 @@ fn main() {
                 views::alert::get_by_viewport
             ],
         )
-        .mount("/pages", routes![])
+        .mount(
+            "/pages",
+            routes![
+                views::pages::load_email_verification_page,
+                views::pages::load_email_verification_success_page,
+                views::pages::load_password_reset_page,
+                views::pages::load_password_reset_success_page
+            ],
+        )
         .mount("/", catch_all_options_routes())
         .manage(cors.clone())
         .attach(cors)
         .attach(StaticResponse::fairing(|resources| {
             static_resources_initialize!(
                 resources,
+                //Image resources
                 "favicon",
                 "src/assets/icon.ico",
                 "favicon-png",
                 "src/assets/icon.png",
                 "banner",
-                "src/assets/banner.png"
+                "src/assets/banner.png",
+                //Page resources
+                "email_verification",
+                "src/pages/email_verification.html",
+                "email_verification_success",
+                "src/pages/email_verification_success.html",
+                "password_reset",
+                "src/pages/password_reset.html",
+                "password_reset_success",
+                "src/pages/password_reset_success.html"
             );
         }))
         .launch();
