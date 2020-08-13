@@ -1,39 +1,50 @@
 <head>
     <style>
-        @import url("https://fonts.googleapis.com/css2?family=Nunito:wght@800&display=swap");
-        @import url("https://fonts.googleapis.com/css2?family=Roboto&display=swap");
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Roboto&display=swap');
 
         .mainContainer {
-            text-align: center;
-            padding: 2.5% 5%;
-            background-color: #f0faff;
+            text-align: left;
+            background: #f0faff;
         }
 
         .logo {
-            width: 55vmin;
+            width: 30%;
+            max-width: 600px;
+            margin-top: 30px;
+            margin-bottom: 20px;
+            margin-left: 10%;
         }
 
         .body {
-            width: 75%;
-            margin: 2.5% 10%;
-            padding: 2.5% 2.5% 5%;
             background-color: #42a5ff;
-            border-radius: 2rem;
-            color: #ffffff;
+            border-radius: 30px;
+            color: #fff;
+            margin-left: 10%;
+            margin-right: 10%;
+            padding: 5% 5%;
+            text-align: left;
+        }
+
+        .button {
+            display: inline-block;
+            padding: 10px 20px;
+            font-weight: 600;
+            text-decoration: none;
+            background-color: #0045cf;
+            border-radius: 4px;
+            font-family: 'Roboto', sans-serif;
+            font-size: 1.35rem;
         }
 
         h2 {
             font-family: 'Nunito', sans-serif;
-            font-size: 5vmin;
+            font-size: 1.5rem
         }
 
-        p,
-        a {
-            text-align: left;
-            font-size: 3.3vmin;
+        p {
             font-family: 'Roboto', sans-serif;
-            margin: 1% 2%;
-            color: #ffffff;
+            font-size: 1.35rem;
         }
     </style>
 </head>
@@ -42,17 +53,21 @@
     <div class="mainContainer">
         <img class="logo" src="http://localhost:3333/banner.png" />
         <div class="body">
-            <h2>Your verification link</h2>
-            <div style="text-align: left;">
-                <p>Hi there!<br><br></p>
-                <a href="https://192.168.1.230:3333/pages/verify?token={}" />Click here to verify your email.
-                </a><br><br>
-                <p>
-                    Thank you for using Elevate! <br><br>
-                    Best regards, <br>
-                    Sooraj from Elevate
-                </p>
-            </div>
+            <h2>Verify Your Email</h2>
+            <p>
+                Hi there! <br /><br />
+
+                We just got a request from you to resend your email verification. You can
+                use the link below to do so!
+
+            </p>
+            <a class="button" style="color: #fff" href="http://localhost:3333/pages/verify?token={}">Verify Email</a>
+            <p>Best regards,<br />Sooraj from Elevate</p>
         </div>
+
+        <p style="padding-bottom: 20px; margin-left: 10%; font-size: 1rem; color: gray;">
+            Contact the developer - soorajkarthik15@gmail.com - github.com/soorajkarthik -
+            linkedin.com/in/sooraj-karthik
+        </p>
     </div>
 </body>

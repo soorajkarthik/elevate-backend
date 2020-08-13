@@ -201,13 +201,22 @@ pub fn verify_email(token: BearerToken, mut connection: PGConnection) -> Standar
     };
 
     match transaction.commit() {
-        Ok(_) => StandardResponse {
-            status: Status::Created,
-            response: json!({
-                "message": "User email successfully verified",
-                "user": user,
-            }),
-        },
+        Ok(_) => {
+            send_email_using_file!(
+                user.email.as_str(),
+                "Thanks for verifying your email!",
+                "src/emails/verification_confirmation.html",
+                "Thank you for verifying your email"
+            );
+
+            StandardResponse {
+                status: Status::Created,
+                response: json!({
+                    "message": "User email successfully verified",
+                    "user": user,
+                }),
+            }
+        }
 
         Err(_) => StandardResponse {
             status: Status::ServiceUnavailable,
