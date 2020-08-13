@@ -22,6 +22,27 @@ impl<'r> Responder<'r> for StandardResponse {
     }
 }
 
+pub struct HTMLResponse {
+    pub status: Status,
+    pub template: Option<String>,
+}
+
+impl<'r> Responder<'r> for HTMLResponse {
+    fn respond_to(self, request: &Request) -> response::Result<'r> {
+        match self.template {
+            Some(template) => Response::build_from(template.respond_to(request).unwrap())
+                .status(self.status)
+                .header(ContentType::HTML)
+                .ok(),
+            None => StandardResponse {
+                status: self.status,
+                response: json!({"message": "The page you were looking for was not found"}),
+            }
+            .respond_to(request),
+        }
+    }
+}
+
 /// Health checker
 #[get("/ping")]
 pub fn get_health() -> StandardResponse {

@@ -100,8 +100,10 @@ fn main() {
         .mount(
             "/pages",
             routes![
+                views::pages::load_email_verification_request_page,
                 views::pages::load_email_verification_page,
                 views::pages::load_email_verification_success_page,
+                views::pages::load_password_reset_request_page,
                 views::pages::load_password_reset_page,
                 views::pages::load_password_reset_success_page
             ],
@@ -112,20 +114,20 @@ fn main() {
         .attach(StaticResponse::fairing(|resources| {
             static_resources_initialize!(
                 resources,
-                //Image resources
+                // Static image resources
                 "favicon",
                 "src/assets/icon.ico",
                 "favicon-png",
                 "src/assets/icon.png",
                 "banner",
                 "src/assets/banner.png",
-                //Page resources
-                "email_verification",
-                "src/pages/email_verification.html",
+                // Static page resources
+                "email_verification_request",
+                "src/pages/email_verification_request.html",
                 "email_verification_success",
                 "src/pages/email_verification_success.html",
-                "password_reset",
-                "src/pages/password_reset.html",
+                "password_reset_request",
+                "src/pages/password_reset_request.html",
                 "password_reset_success",
                 "src/pages/password_reset_success.html"
             );
