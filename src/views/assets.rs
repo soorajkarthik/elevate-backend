@@ -14,3 +14,8 @@ pub fn favicon_png() -> StaticResponse {
 pub fn banner() -> StaticResponse {
     static_response!("banner")
 }
+
+#[get("/banner_white.png")]
+pub fn banner_white() -> StaticResponse {
+    static_response!("banner_white")
+}

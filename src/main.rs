@@ -70,7 +70,8 @@ fn main() {
                 views::request::get_health,
                 views::assets::favicon,
                 views::assets::favicon_png,
-                views::assets::banner
+                views::assets::banner,
+                views::assets::banner_white
             ],
         )
         .mount(
@@ -121,6 +122,8 @@ fn main() {
                 "src/assets/icon.png",
                 "banner",
                 "src/assets/banner.png",
+                "banner_white",
+                "src/assets/banner_white.png",
                 // Static page resources
                 "email_verification_request",
                 "src/pages/email_verification_request.html",
