@@ -127,12 +127,8 @@ fn main() {
                 // Static page resources
                 "email_verification_request",
                 "src/pages/email_verification_request.html",
-                "email_verification_success",
-                "src/pages/email_verification_success.html",
                 "password_reset_request",
                 "src/pages/password_reset_request.html",
-                "password_reset_success",
-                "src/pages/password_reset_success.html"
             );
         }))
         .launch();

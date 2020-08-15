@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+
+<head>
+    <style type="text/css">
+        .mainContainer {
+            font-family: Tahoma, sans-serif;
+            color: #ffffff;
+            background-color: #fff;
+            padding: 5% 2.5%;
+            text-align: center;
+        }
+
+        .logo {
+            width: 50%;
+        }
+
+        .bodyContainer {
+            padding: 5%;
+            width: 50vmin;
+            border-radius: 30px;
+            background-color: #42a5ff;
+            display: inline-block;
+            text-align: left;
+        }
+
+        p {
+            font-size: 3.3vmin;
+            font-weight: 500;
+        }
+
+        hr {
+            color: rgba(255, 255, 255, 0);
+            border: none;
+        }
+    </style>
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js" type="text/javascript"></script>
+    <script type="text/javascript">
+
+        jQuery(document).ready(function ($) {
+            if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+                $(".mainContainer").css("margin-top", "40%");
+                $(".logo").css("width", "75%");
+                zoom(1.75);
+            }
+        })
+
+        function zoom(scale) {
+            document.body.style.transform = "scale(" + scale + ")";
+            document.body.style.transformOrigin = "top left";
+            document.body.style.width = (100 / scale) + "%";
+            document.body.style.height = (100 / scale) + "%";
+        }
+
+    </script>
+</head>
+
+<body>
+    <div class="mainContainer">
+        <img class="logo" src="http://localhost:3333/banner_white.png" />
+        <hr />
+        <div class="bodyContainer">
+            <p>{}</p>
+        </div>
+    </div>
+</body>
