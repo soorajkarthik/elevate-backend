@@ -7,14 +7,28 @@ use crate::{fetch_user, transaction};
 use rocket::http::Status;
 use rocket_contrib::json::Json;
 
-#[post("/location", format = "application/json", data = "<location>")]
+#[post("/location", format = "application/json", data = "<locations>")]
 pub fn update_user_location(
-    mut location: Json<Location>,
+    locations: Json<Vec<Location>>,
     token: BearerToken,
     mut connection: PGConnection,
 ) -> StandardResponse {
+    let mut locations = locations.into_inner();
+
+    if locations.len() <= 0 {
+        return StandardResponse {
+            status: Status::BadRequest,
+            response: json!({
+              "message": "No new locations given"
+            }),
+        };
+    }
+
     let mut transaction = transaction!(connection);
     let user = fetch_user!(token.token, TokenType::Auth, &mut transaction);
+
+    // Get latest location. Unwrap safe since we checked len > 0
+    let mut location = locations.last_mut().unwrap();
 
     location.user_id = user.id;
 
