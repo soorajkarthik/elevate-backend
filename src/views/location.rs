@@ -7,7 +7,7 @@ use crate::{fetch_user, transaction};
 use rocket::http::Status;
 use rocket_contrib::json::Json;
 
-#[put("/location", format = "application/json", data = "<location>")]
+#[post("/location", format = "application/json", data = "<location>")]
 pub fn update_user_location(
     mut location: Json<Location>,
     token: BearerToken,
