@@ -45,11 +45,11 @@ pub fn create_alert(
         }
     };
 
-    let user_tokens = alert.nearby_user_tokens(&mut transaction);
+    let notification_info = alert.get_notification_info(&mut transaction);
 
     match transaction.commit() {
         Ok(_) => {
-            let count = send_alert_notification(&alert, user_tokens);
+            let count = send_alert_notification(&alert, notification_info);
 
             StandardResponse {
                 status: Status::Ok,

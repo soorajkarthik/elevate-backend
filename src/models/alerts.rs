@@ -121,6 +121,22 @@ macro_rules! alert {
     };
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct AlertNotificationInfo {
+    pub distance: f32,
+    pub token: String,
+}
+
+#[macro_export]
+macro_rules! alert_notification_info {
+    ($row:expr) => {
+        AlertNotificationInfo {
+            distance: $row.get("distance"),
+            token: $row.get("token"),
+        }
+    };
+}
+
 pub const LAT_LNG_VIEW_PORT: f32 = 0.145; // 0.145 degrees ~ 10 miles
 
 impl Alert {
@@ -249,9 +265,15 @@ impl Alert {
         self.alert_type_obj = AlertType::get_by_name(&self.alert_type, transaction);
     }
 
-    pub fn nearby_user_tokens(&self, transaction: &mut Transaction) -> Vec<String> {
+    pub fn get_notification_info(
+        &self,
+        transaction: &mut Transaction,
+    ) -> Vec<AlertNotificationInfo> {
         match transaction.query(
-            "select fdt.token from firebase_device_tokens fdt
+            "select 
+                calculate_distance($1, $2, l.latitude, l.longitude) as distance,
+                fdt.token 
+            from firebase_device_tokens fdt
             inner join locations l
                 on  fdt.user_id = l.user_id
             where 
@@ -262,7 +284,10 @@ impl Alert {
             ",
             &[&self.latitude, &self.longitude, &LAT_LNG_VIEW_PORT],
         ) {
-            Ok(rows) => rows.iter().map(|row| row.get(0)).collect::<Vec<String>>(),
+            Ok(rows) => rows
+                .iter()
+                .map(|row| alert_notification_info!(row))
+                .collect::<Vec<AlertNotificationInfo>>(),
             Err(err) => {
                 error!("{}", err);
                 Vec::new()

@@ -18,7 +18,7 @@ returns real AS $dist$
         theta real;
         radtheta real;
     begin
-        if lat1 = lat2 or lon1 = lon2
+        if lat1 = lat2 and lon1 = lon2
             then return dist;
         else
             radlat1 = pi() * lat1 / 180;
