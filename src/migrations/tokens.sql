@@ -10,7 +10,8 @@ create table if not exists firebase_device_tokens (
     user_id bigint not null references users (id) on delete cascade,
     token text not null,
     created_at timestamp without time zone default now(),
-    updated_at timestamp without time zone default now()
+    updated_at timestamp without time zone default now(),
+    constraint unique_token_device_per_user unique (user_id)
 );
 
 create index token_user_id_index on firebase_device_tokens (user_id);

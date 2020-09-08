@@ -173,4 +173,30 @@ impl User {
             }
         }
     }
+
+    pub fn update_device_token(
+        &self,
+        device_token: String,
+        transaction: &mut Transaction,
+    ) -> Result<(), String> {
+        match transaction.query_one(
+            "insert into firebase_device_tokens (
+                user_id, 
+                token,
+                updated_at
+            ) values ($1, $2, now())
+            on conflict (user_id) do update set 
+                token = excluded.token,
+                updated_at = now()
+            returning *
+        ",
+            &[&self.id, &device_token],
+        ) {
+            Ok(_) => return Ok(()),
+            Err(err) => {
+                error!("{}", err);
+                return Err(String::from("Error while updating token"));
+            }
+        }
+    }
 }

@@ -84,7 +84,8 @@ fn main() {
                 views::user::request_password_reset,
                 views::user::reset_password,
                 views::location::update_user_location,
-                views::location::get_location
+                views::location::get_location,
+                views::user::update_device_token
             ],
         )
         .mount(

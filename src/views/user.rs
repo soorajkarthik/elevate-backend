@@ -460,3 +460,41 @@ pub fn reset_password(auth: BasicAuth, mut connection: PGConnection) -> Standard
         },
     }
 }
+
+#[put("/deviceTokens", format = "application/json", data = "<device_token>")]
+pub fn update_device_token(
+    device_token: Json<String>,
+    token: BearerToken,
+    mut connection: PGConnection,
+) -> StandardResponse {
+    let mut transaction = transaction!(connection);
+    let user = fetch_user!(token.token, TokenType::Auth, &mut transaction);
+
+    if user
+        .update_device_token(device_token.into_inner(), &mut transaction)
+        .is_err()
+    {
+        return StandardResponse {
+            status: Status::UnprocessableEntity,
+            response: json!({
+                "message": "Device token cannot be updated at this time"
+            }),
+        };
+    };
+
+    match transaction.commit() {
+        Ok(_) => StandardResponse {
+            status: Status::Ok,
+            response: json!({
+                "message": "Device token updated successfully"
+            }),
+        },
+
+        Err(_) => StandardResponse {
+            status: Status::ServiceUnavailable,
+            response: json!({
+                "message": "Unable to commit changes to database"
+            }),
+        },
+    }
+}
