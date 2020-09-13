@@ -7,6 +7,7 @@ use crate::{fetch_user, send_email_using_file, transaction};
 use bcrypt::verify;
 use rocket::http::Status;
 use rocket_contrib::json::Json;
+use serde::{Deserialize, Serialize};
 use std::fs::read_to_string;
 
 #[post("/login")]
@@ -461,9 +462,14 @@ pub fn reset_password(auth: BasicAuth, mut connection: PGConnection) -> Standard
     }
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct DeviceToken {
+    pub token: String,
+}
+
 #[put("/deviceTokens", format = "application/json", data = "<device_token>")]
 pub fn update_device_token(
-    device_token: Json<String>,
+    device_token: Json<DeviceToken>,
     token: BearerToken,
     mut connection: PGConnection,
 ) -> StandardResponse {
@@ -471,7 +477,7 @@ pub fn update_device_token(
     let user = fetch_user!(token.token, TokenType::Auth, &mut transaction);
 
     if user
-        .update_device_token(device_token.into_inner(), &mut transaction)
+        .update_device_token(device_token.into_inner().token, &mut transaction)
         .is_err()
     {
         return StandardResponse {
