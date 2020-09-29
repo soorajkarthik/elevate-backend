@@ -38,7 +38,8 @@ pub fn send_alert_notification(
                         "title": format!("Elevate {} Alert", &alert.alert_type),
                         "message": format!("{} reported near {}! About {:.1} miles away", &alert.alert_type, &alert.place, &info.distance)
                     },
-                    "to": info.token
+                    "to": info.token,
+                    "priority": 10
                 })
             })
             .collect::<Vec<JsonValue>>();
