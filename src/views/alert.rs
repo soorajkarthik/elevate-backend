@@ -54,7 +54,7 @@ pub fn create_alert(
             StandardResponse {
                 status: Status::Ok,
                 response: json!({
-                    "message": format!("Alert successfully created, notified {} nearby users", count),
+                    "message": format!("Alert successfully created, notified {} nearby user(s)", count),
                     "alert": alert
                 }),
             }

@@ -23,7 +23,7 @@ struct FirebaseMultiCastResponse {
 pub fn send_alert_notification(
     alert: &Alert,
     notification_info: Vec<AlertNotificationInfo>,
-) -> bool {
+) -> u16 {
     let api_key = env::var("FIREBASE_MESSAGING_SERVER_KEY");
 
     if let Ok(api_key) = api_key {
@@ -46,7 +46,7 @@ pub fn send_alert_notification(
 
         debug!("Notification payloads: {:#?}", payloads);
 
-        let mut had_errors = false;
+        let mut count: u16 = 0;
 
         for payload in payloads {
             let response = client
@@ -60,23 +60,22 @@ pub fn send_alert_notification(
                     match response_json {
                         Ok(fmc_response) => {
                             info!("Multicast {} was successful", fmc_response.multicast_id);
+                            count += 1;
                         }
                         Err(_) => {
                             error!("Failed to send notification.");
-                            had_errors = true;
                         }
                     }
                 }
                 Err(msg) => {
                     error!("{}", msg);
-                    had_errors = true;
                 }
             };
             thread::sleep(time::Duration::from_millis(100));
         }
 
-        return !had_errors;
+        return count;
     }
 
-    return false;
+    return 0u16;
 }
