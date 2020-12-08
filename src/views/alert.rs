@@ -266,12 +266,11 @@ pub fn delete_alert(
     }
 }
 
-#[get("/?<ne_lat>&<ne_lng>&<sw_lat>&<sw_lng>")]
+#[get("/?<lat>&<lng>&<radius>")]
 pub fn get_by_viewport(
-    ne_lat: f32,
-    ne_lng: f32,
-    sw_lat: f32,
-    sw_lng: f32,
+    lat: f32,
+    lng: f32,
+    radius: f32,
     token: BearerToken,
     mut connection: PGConnection,
 ) -> StandardResponse {
@@ -281,10 +280,10 @@ pub fn get_by_viewport(
     StandardResponse {
         status: Status::Ok,
         response: json!(Alert::get_by_viewport(
-            ne_lat,
-            ne_lng,
-            sw_lat,
-            sw_lng,
+            lat + radius,
+            lng + radius,
+            lat - radius,
+            lng - radius,
             &mut transaction
         )),
     }
