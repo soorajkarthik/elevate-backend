@@ -23,7 +23,3 @@ rocket_cors = { version = "0.5.1", default-features = false }
 rocket-include-static-resources = "0.9.5"
 serde = { version = "1.0.1", features = ["derive"] }
 serde_json = "1.0"
-sqlx-cli = { version = "0.5.1", default-features = false, features = ["postgres"] }
-
-# SQXL CLI install command:
-# cargo install sqlx-cli --no-default-features --features postgres
