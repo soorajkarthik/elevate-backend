@@ -22,12 +22,13 @@ impl DerefMut for PGConnection {
 impl PGConnection {
     pub fn connect() -> Result<Self, String> {
         let connection_str = format!(
-            "{}://{}:{}@{}/{}",
+            "{}://{}:{}@{}:{}/{}",
+            env::var("DB_TYPE").unwrap(),
             env::var("DB_USER").unwrap(),
             env::var("DB_PASSWORD").unwrap(),
             env::var("DB_HOST").unwrap(),
             env::var("DB_PORT").unwrap(),
-            env::var("DB_DATABASE").unwrap()
+            env::var("DB_NAME").unwrap()
         );
         match Client::connect(connection_str.as_str(), NoTls) {
             Ok(client) => Ok(PGConnection { client }),
