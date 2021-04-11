@@ -1,3 +1,4 @@
+use crate::models::user::User;
 use chrono::NaiveDateTime;
 use postgres::Transaction;
 use serde::{Deserialize, Serialize};
@@ -85,9 +86,13 @@ pub struct Alert {
 
     pub longitude: f32,
 
+    #[serde(skip_serializing)]
+    #[serde(skip_deserializing)]
+    pub created_by_email: String,
+
     #[serde(rename = "createdBy")]
     #[serde(skip_deserializing)]
-    pub created_by: String,
+    pub created_by: Option<User>,
 
     #[serde(rename = "isResolved")]
     #[serde(skip_deserializing)]
@@ -113,7 +118,8 @@ macro_rules! alert {
             place: $row.get("place"),
             latitude: $row.get("latitude"),
             longitude: $row.get("longitude"),
-            created_by: $row.get("created_by"),
+            created_by_email: $row.get("created_by"),
+            created_by: Option::None,
             is_resolved: $row.get("is_resolved"),
             created_at: $row.get("created_at"),
             updated_at: $row.get("updated_at"),
@@ -158,7 +164,7 @@ impl Alert {
                 &self.place,
                 &self.latitude,
                 &self.longitude,
-                &self.created_by,
+                &self.created_by_email,
             ],
         ) {
             Ok(row) => {
@@ -263,6 +269,7 @@ impl Alert {
 
     pub fn populate(&mut self, transaction: &mut Transaction) {
         self.alert_type_obj = AlertType::get_by_name(&self.alert_type, transaction);
+        self.created_by = User::from_email(String::from(&self.created_by_email), transaction);
     }
 
     pub fn get_notification_info(
