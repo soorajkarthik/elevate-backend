@@ -1,4 +1,5 @@
 use crate::models::user::User;
+use crate::{models::location::Location, services::mapquest::get_address};
 use chrono::NaiveDateTime;
 use postgres::Transaction;
 use serde::{Deserialize, Serialize};
@@ -282,6 +283,40 @@ impl Alert {
                 Err(String::from("Could not delete alert"))
             }
         }
+    }
+
+    pub fn update_tracking_alert(location: &Location, transaction: &mut Transaction) -> Vec<Self> {
+        if let Some(user) = User::from_id(location.user_id, transaction) {
+            return match transaction.query(
+                "update alerts set
+                    latitude = $1,
+                    longitude = $2,
+                    place = $3,
+                    updated_at = now()
+                where 
+                    created_by = $4
+                    and track_location
+                returning *
+                ",
+                &[
+                    &location.latitude,
+                    &location.longitude,
+                    &get_address(location.latitude, location.longitude),
+                    &user.email,
+                ],
+            ) {
+                Ok(rows) => {
+                    info!("updated location of {} alerts", rows.len());
+                    rows.iter().map(|row| alert!(row)).collect::<Vec<Alert>>()
+                }
+                Err(err) => {
+                    error!("{}", err);
+                    Vec::new()
+                }
+            };
+        }
+
+        Vec::new()
     }
 
     pub fn get_by_id(id: i64, transaction: &mut Transaction) -> Option<Alert> {

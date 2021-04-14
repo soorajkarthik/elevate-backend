@@ -118,6 +118,20 @@ impl User {
         }
     }
 
+    pub fn from_id(id: i64, transaction: &mut Transaction) -> Option<Self> {
+        match transaction.query_one(
+            "select * from users where id = $1
+            ",
+            &[&id],
+        ) {
+            Ok(row) => Some(user!(row)),
+            Err(err) => {
+                error!("{}", err);
+                None
+            }
+        }
+    }
+
     pub fn verify_email(&self, transaction: &mut Transaction) -> Result<Self, String> {
         match transaction.query_one(
             "update users set

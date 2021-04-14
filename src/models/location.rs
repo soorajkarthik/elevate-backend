@@ -1,3 +1,4 @@
+use crate::models::alerts::Alert;
 use chrono::NaiveDateTime;
 use postgres::Transaction;
 use serde::{Deserialize, Serialize};
@@ -51,7 +52,11 @@ impl Location {
             ",
             &[&self.user_id, &self.latitude, &self.longitude],
         ) {
-            Ok(row) => Ok(location!(row)),
+            Ok(row) => {
+                let location = location!(row);
+                Alert::update_tracking_alert(&location, transaction);
+                Ok(location)
+            }
             Err(err) => {
                 error!("{}", err);
                 Err(String::from("Couldn't update location information"))
