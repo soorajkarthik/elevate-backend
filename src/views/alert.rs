@@ -30,7 +30,7 @@ pub fn create_alert(
     let user = fetch_user!(token.token, TokenType::Auth, &mut transaction);
 
     let mut alert = alert.into_inner();
-    alert.created_by_email = user.email;
+    alert.created_by = user.email;
     alert.place = get_address(alert.latitude, alert.longitude);
 
     let alert = match alert.init(&mut transaction) {
@@ -94,7 +94,7 @@ pub fn update_alert(
         }
     };
 
-    if alert.created_by_email != user.email {
+    if alert.created_by != user.email {
         return StandardResponse {
             status: Status::BadRequest,
             response: json!({
@@ -164,7 +164,7 @@ pub fn resolve_alert(
         }
     };
 
-    if alert.created_by_email != user.email {
+    if alert.created_by != user.email {
         return StandardResponse {
             status: Status::BadRequest,
             response: json!({
@@ -227,7 +227,7 @@ pub fn delete_alert(
         }
     };
 
-    if alert.created_by_email != user.email {
+    if alert.created_by != user.email {
         return StandardResponse {
             status: Status::BadRequest,
             response: json!({

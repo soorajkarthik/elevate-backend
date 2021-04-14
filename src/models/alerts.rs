@@ -65,6 +65,35 @@ impl AlertType {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+pub struct AlertUserInfo {
+    pub name: String,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub email: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub phone: Option<String>,
+}
+
+#[macro_export]
+macro_rules! alert_user_info {
+    ($alert:expr, $user:expr) => {
+        AlertUserInfo {
+            name: $user.name,
+            email: if $alert.display_email {
+                Some($user.email)
+            } else {
+                Option::None
+            },
+            phone: if $alert.display_phone {
+                $user.phone
+            } else {
+                Option::None
+            },
+        }
+    };
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Alert {
     #[serde(skip_deserializing)]
     pub id: i64,
@@ -86,13 +115,22 @@ pub struct Alert {
 
     pub longitude: f32,
 
-    #[serde(skip_serializing)]
-    #[serde(skip_deserializing)]
-    pub created_by_email: String,
+    #[serde(rename = "displayEmail")]
+    pub display_email: bool,
 
-    #[serde(rename = "createdBy")]
+    #[serde(rename = "displayPhone")]
+    pub display_phone: bool,
+
+    #[serde(rename = "trackLocation")]
+    pub track_location: bool,
+
+    #[serde(skip)]
+    pub created_by: String,
+
+    #[serde(rename = "userInfo")]
     #[serde(skip_deserializing)]
-    pub created_by: Option<User>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub user_info: Option<AlertUserInfo>,
 
     #[serde(rename = "isResolved")]
     #[serde(skip_deserializing)]
@@ -118,8 +156,11 @@ macro_rules! alert {
             place: $row.get("place"),
             latitude: $row.get("latitude"),
             longitude: $row.get("longitude"),
-            created_by_email: $row.get("created_by"),
-            created_by: Option::None,
+            display_email: $row.get("display_email"),
+            display_phone: $row.get("display_phone"),
+            track_location: $row.get("track_location"),
+            created_by: $row.get("created_by"),
+            user_info: Option::None,
             is_resolved: $row.get("is_resolved"),
             created_at: $row.get("created_at"),
             updated_at: $row.get("updated_at"),
@@ -164,7 +205,7 @@ impl Alert {
                 &self.place,
                 &self.latitude,
                 &self.longitude,
-                &self.created_by_email,
+                &self.created_by,
             ],
         ) {
             Ok(row) => {
@@ -269,7 +310,9 @@ impl Alert {
 
     pub fn populate(&mut self, transaction: &mut Transaction) {
         self.alert_type_obj = AlertType::get_by_name(&self.alert_type, transaction);
-        self.created_by = User::from_email(String::from(&self.created_by_email), transaction);
+        if let Some(user) = User::from_email(String::from(&self.created_by), transaction) {
+            self.user_info = Some(alert_user_info!(self, user));
+        }
     }
 
     pub fn get_notification_info(
