@@ -195,8 +195,11 @@ impl Alert {
                 place,
                 latitude,
                 longitude,
+                display_email,
+                display_phone,
+                track_location,
                 created_by
-            ) values ($1, $2, $3, $4, $5, $6)
+            ) values ($1, $2, $3, $4, $5, $6, $7, $8, $9)
             returning *
             ",
             &[
@@ -205,6 +208,9 @@ impl Alert {
                 &self.place,
                 &self.latitude,
                 &self.longitude,
+                &self.display_email,
+                &self.display_phone,
+                &self.track_location,
                 &self.created_by,
             ],
         ) {
@@ -247,8 +253,11 @@ impl Alert {
                 place = $3, 
                 latitude = $4, 
                 longitude = $5,
+                display_email = $6,
+                display_phone = $7,
+                track_location = $8,
                 updated_at = now()
-            where id = $6 
+            where id = $9 
             returning *
             ",
             &[
@@ -257,6 +266,9 @@ impl Alert {
                 &self.place,
                 &self.latitude,
                 &self.longitude,
+                &self.display_email,
+                &self.display_phone,
+                &self.track_location,
                 &self.id,
             ],
         ) {

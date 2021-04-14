@@ -108,6 +108,8 @@ pub fn update_alert(
 
     if alert.latitude != updated.latitude || alert.longitude != updated.longitude {
         updated.place = get_address(alert.latitude, alert.longitude);
+    } else {
+        updated.place = alert.place;
     }
 
     let updated = match updated.update(&mut transaction) {
