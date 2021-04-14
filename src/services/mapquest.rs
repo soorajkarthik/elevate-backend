@@ -34,7 +34,7 @@ pub fn get_address(latitude: f32, longitude: f32) -> String {
                         match json_value["locations"].get(0) {
                             Some(value) => {
                                 return format!(
-                                    "{}, {}, {}, {}", // Strip strings of quotes
+                                    "{}, {}, {}, {}",                                        // Strip strings of quotes
                                     value["street"].as_str().unwrap().replace("\"", ""), // Street address
                                     value["adminArea5"].as_str().unwrap().replace("\"", ""), // City
                                     value["adminArea3"].as_str().unwrap().replace("\"", ""), // State

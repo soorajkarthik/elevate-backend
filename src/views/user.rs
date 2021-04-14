@@ -1,8 +1,8 @@
 use crate::models::auth::*;
 use crate::models::database::PGConnection;
 use crate::models::user::User;
-use crate::views::request::StandardResponse;
 use crate::services::email::send_email;
+use crate::views::request::StandardResponse;
 use crate::{fetch_user, send_email_using_file, transaction};
 use bcrypt::verify;
 use rocket::http::Status;
