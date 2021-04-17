@@ -1,6 +1,6 @@
-use crate::models::location::Location;
 use crate::models::user::User;
-use crate::services::mapquest::get_address;
+use crate::services::mapquest::{get_address, MapquestResult};
+use crate::{models::location::Location, services::mapquest::get_location};
 use chrono::NaiveDateTime;
 use postgres::Transaction;
 use serde::{Deserialize, Serialize};
@@ -110,12 +110,11 @@ pub struct Alert {
 
     pub description: Option<String>,
 
-    #[serde(skip_deserializing)]
-    pub place: String,
+    pub place: Option<String>,
 
-    pub latitude: f32,
+    pub latitude: Option<f32>,
 
-    pub longitude: f32,
+    pub longitude: Option<f32>,
 
     #[serde(rename = "displayEmail")]
     pub display_email: bool,
@@ -155,9 +154,9 @@ macro_rules! alert {
             alert_type: $row.get("alert_type"),
             alert_type_obj: None,
             description: $row.get("description"),
-            place: $row.get("place"),
-            latitude: $row.get("latitude"),
-            longitude: $row.get("longitude"),
+            place: Some($row.get("place")),
+            latitude: Some($row.get("latitude")),
+            longitude: Some($row.get("longitude")),
             display_email: $row.get("display_email"),
             display_phone: $row.get("display_phone"),
             track_location: $row.get("track_location"),
@@ -189,7 +188,10 @@ macro_rules! alert_notification_info {
 pub const LAT_LNG_VIEW_PORT: f32 = 0.145; // 0.145 degrees ~ 10 miles
 
 impl Alert {
-    pub fn init(&self, transaction: &mut Transaction) -> Result<Self, String> {
+    pub fn init(&mut self, transaction: &mut Transaction) -> Result<Self, String> {
+        if let Err(err) = self.fill_missing_info() {
+            return Err(err);
+        }
         match transaction.query_one(
             "insert into alerts (
                 alert_type,
@@ -247,7 +249,10 @@ impl Alert {
         }
     }
 
-    pub fn update(&self, transaction: &mut Transaction) -> Result<Self, String> {
+    pub fn update(&self, new: &mut Self, transaction: &mut Transaction) -> Result<Self, String> {
+        if let Err(err) = new.fill_missing_info() {
+            return Err(err);
+        }
         match transaction.query_one(
             "update alerts set
                 alert_type = $1,
@@ -263,14 +268,14 @@ impl Alert {
             returning *
             ",
             &[
-                &self.alert_type,
-                &self.description,
-                &self.place,
-                &self.latitude,
-                &self.longitude,
-                &self.display_email,
-                &self.display_phone,
-                &self.track_location,
+                &new.alert_type,
+                &new.description,
+                &new.place,
+                &new.latitude,
+                &new.longitude,
+                &new.display_email,
+                &new.display_phone,
+                &new.track_location,
                 &self.id,
             ],
         ) {
@@ -281,15 +286,18 @@ impl Alert {
             }
             Err(err) => {
                 error!("{}", err);
-                Err(String::from("Could not delete alert"))
+                Err(String::from("Could not update alert"))
             }
         }
     }
 
     pub fn update_tracking_alert(location: &Location, transaction: &mut Transaction) -> Vec<Self> {
         if let Some(user) = User::from_id(location.user_id, transaction) {
-            return match transaction.query(
-                "update alerts set
+            if let MapquestResult::Success(address) =
+                get_address(location.latitude, location.longitude)
+            {
+                return match transaction.query(
+                    "update alerts set
                     latitude = $1,
                     longitude = $2,
                     place = $3,
@@ -299,22 +307,23 @@ impl Alert {
                     and track_location
                 returning *
                 ",
-                &[
-                    &location.latitude,
-                    &location.longitude,
-                    &get_address(location.latitude, location.longitude),
-                    &user.email,
-                ],
-            ) {
-                Ok(rows) => {
-                    info!("updated location of {} alerts", rows.len());
-                    rows.iter().map(|row| alert!(row)).collect::<Vec<Alert>>()
-                }
-                Err(err) => {
-                    error!("{}", err);
-                    Vec::new()
-                }
-            };
+                    &[
+                        &location.latitude,
+                        &location.longitude,
+                        &address,
+                        &user.email,
+                    ],
+                ) {
+                    Ok(rows) => {
+                        info!("updated location of {} alerts", rows.len());
+                        rows.iter().map(|row| alert!(row)).collect::<Vec<Alert>>()
+                    }
+                    Err(err) => {
+                        error!("{}", err);
+                        Vec::new()
+                    }
+                };
+            }
         }
 
         Vec::new()
@@ -360,6 +369,33 @@ impl Alert {
         self.alert_type_obj = AlertType::get_by_name(&self.alert_type, transaction);
         if let Some(user) = User::from_email(String::from(&self.created_by), transaction) {
             self.user_info = Some(alert_user_info!(self, user));
+        }
+    }
+
+    pub fn fill_missing_info(&mut self) -> Result<(), String> {
+        if let (Some(latitude), Some(longitude)) = (self.latitude, self.longitude) {
+            match get_address(latitude, longitude) {
+                MapquestResult::Success(address) => {
+                    self.place = Some(address);
+                    Ok(())
+                }
+                MapquestResult::NoAPIKey | MapquestResult::NoValue | MapquestResult::NoResult => {
+                    Err(String::from("Could not convert location to address!"))
+                }
+            }
+        } else if let Some(place) = &self.place {
+            match get_location(place.to_string()) {
+                MapquestResult::Success((latitude, longitude)) => {
+                    self.latitude = Some(latitude);
+                    self.longitude = Some(longitude);
+                    Ok(())
+                }
+                MapquestResult::NoAPIKey | MapquestResult::NoValue | MapquestResult::NoResult => {
+                    Err(String::from("Could not convert address to locaiton!"))
+                }
+            }
+        } else {
+            Err(String::from("Must either provide (lat, long) or address!"))
         }
     }
 

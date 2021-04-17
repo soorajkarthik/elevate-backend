@@ -1,8 +1,16 @@
+use core::f32;
 use reqwest::blocking::Client;
 use serde_json::Value;
 use std::env;
 
-pub fn get_address(latitude: f32, longitude: f32) -> String {
+pub enum MapquestResult<T> {
+    NoAPIKey,
+    NoResult,
+    NoValue,
+    Success(T),
+}
+
+pub fn get_address(latitude: f32, longitude: f32) -> MapquestResult<String> {
     // Grab api key from environment
     let api_key = env::var("MAPQUEST_API_KEY");
 
@@ -33,23 +41,27 @@ pub fn get_address(latitude: f32, longitude: f32) -> String {
                         // Get the first location result, results are ordered by distance asc.
                         match json_value["locations"].get(0) {
                             Some(value) => {
-                                return format!(
+                                return MapquestResult::Success(format!(
                                     "{}, {}, {}, {}",                                        // Strip strings of quotes
                                     value["street"].as_str().unwrap().replace("\"", ""), // Street address
                                     value["adminArea5"].as_str().unwrap().replace("\"", ""), // City
                                     value["adminArea3"].as_str().unwrap().replace("\"", ""), // State
                                     value["adminArea1"].as_str().unwrap().replace("\"", "") // Country
-                                );
+                                ));
                             }
-                            None => return String::new(),
+                            None => return MapquestResult::NoValue,
                         }
                     }
-                    None => return String::new(),
+                    None => return MapquestResult::NoResult,
                 }
             }
         }
     }
 
     // No api key found
-    String::new()
+    MapquestResult::NoAPIKey
+}
+
+pub fn get_location(place: String) -> MapquestResult<(f32, f32)> {
+    MapquestResult::Success((12.12, 12.12))
 }

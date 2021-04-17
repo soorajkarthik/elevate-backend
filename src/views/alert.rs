@@ -3,7 +3,6 @@ use crate::models::auth::{BearerToken, TokenType};
 use crate::models::database::PGConnection;
 use crate::models::user::User;
 use crate::services::firebase::send_alert_notification;
-use crate::services::mapquest::get_address;
 use crate::views::request::StandardResponse;
 use crate::{fetch_user, transaction};
 use rocket::http::Status;
@@ -31,15 +30,14 @@ pub fn create_alert(
 
     let mut alert = alert.into_inner();
     alert.created_by = user.email;
-    alert.place = get_address(alert.latitude, alert.longitude);
 
     let alert = match alert.init(&mut transaction) {
         Ok(alert) => alert,
-        Err(_) => {
+        Err(err) => {
             return StandardResponse {
                 status: Status::UnprocessableEntity,
                 response: json!({
-                    "message": "Could not create new alert"
+                    "message": format!("Could not create new alert: {}", err)
                 }),
             }
         }
@@ -104,21 +102,14 @@ pub fn update_alert(
     }
 
     let mut updated = updated.into_inner();
-    updated.id = alert.id;
 
-    if alert.latitude != updated.latitude || alert.longitude != updated.longitude {
-        updated.place = get_address(alert.latitude, alert.longitude);
-    } else {
-        updated.place = alert.place;
-    }
-
-    let updated = match updated.update(&mut transaction) {
+    let updated = match alert.update(&mut updated, &mut transaction) {
         Ok(alert) => alert,
-        Err(_) => {
+        Err(err) => {
             return StandardResponse {
                 status: Status::UnprocessableEntity,
-                response: json!({
-                    "message": "Could not update alert"
+                response: json!({ 
+                    "message": format!("Could not update alert: {}", err) 
                 }),
             }
         }
