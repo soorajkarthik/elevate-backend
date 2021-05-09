@@ -2,6 +2,7 @@ use crate::models::auth::{BearerToken, TokenType};
 use crate::models::database::PGConnection;
 use crate::models::location::Location;
 use crate::models::user::User;
+use crate::services::mapquest::{get_address, MapquestResult};
 use crate::views::request::StandardResponse;
 use crate::{fetch_user, transaction};
 use rocket::http::Status;
@@ -63,12 +64,42 @@ pub fn update_user_location(
 }
 
 #[get("/location")]
-pub fn get_location(token: BearerToken, mut connection: PGConnection) -> StandardResponse {
+pub fn get_user_location(token: BearerToken, mut connection: PGConnection) -> StandardResponse {
     let mut transaction = transaction!(connection);
     let user = fetch_user!(token.token, TokenType::Auth, &mut transaction);
 
     StandardResponse {
         status: Status::Ok,
         response: json!(user.get_location(&mut transaction)),
+    }
+}
+
+#[get("/address")]
+pub fn get_user_address(token: BearerToken, mut connection: PGConnection) -> StandardResponse {
+    let mut transaction = transaction!(connection);
+    let user = fetch_user!(token.token, TokenType::Auth, &mut transaction);
+
+    if let Some(location) = user.get_location(&mut transaction) {
+        return match get_address(location.latitude, location.longitude) {
+            MapquestResult::Success(address) => StandardResponse {
+                status: Status::Ok,
+                response: json!({ "address": address }),
+            },
+            MapquestResult::NoAPIKey | MapquestResult::NoValue | MapquestResult::NoResult => {
+                StandardResponse {
+                    status: Status::BadRequest,
+                    response: json!({
+                        "message": "Request to location reverse api failed"
+                    }),
+                }
+            }
+        };
+    }
+
+    StandardResponse {
+        status: Status::BadRequest,
+        response: json!({
+            "message": "User location not found"
+        }),
     }
 }

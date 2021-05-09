@@ -1,4 +1,3 @@
-use core::f32;
 use reqwest::blocking::Client;
 use serde_json::Value;
 use std::env;

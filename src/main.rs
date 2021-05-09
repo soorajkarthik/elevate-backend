@@ -21,6 +21,7 @@ extern crate rocket_cors;
 #[macro_use]
 extern crate rocket_include_static_resources;
 extern crate serde_json;
+extern crate urlencoding;
 
 mod models;
 mod services;
@@ -83,9 +84,10 @@ fn main() {
                 views::user::send_verification_email,
                 views::user::request_password_reset,
                 views::user::reset_password,
+                views::user::update_device_token,
                 views::location::update_user_location,
-                views::location::get_location,
-                views::user::update_device_token
+                views::location::get_user_location,
+                views::location::get_user_address
             ],
         )
         .mount(
