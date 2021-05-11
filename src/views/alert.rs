@@ -36,9 +36,7 @@ pub fn create_alert(
         Err(err) => {
             return StandardResponse {
                 status: Status::UnprocessableEntity,
-                response: json!({
-                    "message": format!("Could not create new alert: {}", err)
-                }),
+                response: json!({ "message": format!("Could not create new alert: {}", err) }),
             }
         }
     };
@@ -108,9 +106,7 @@ pub fn update_alert(
         Err(err) => {
             return StandardResponse {
                 status: Status::UnprocessableEntity,
-                response: json!({ 
-                    "message": format!("Could not update alert: {}", err) 
-                }),
+                response: json!({ "message": format!("Could not update alert: {}", err) }),
             }
         }
     };
@@ -259,11 +255,12 @@ pub fn delete_alert(
     }
 }
 
-#[get("/?<lat>&<lng>&<radius>")]
+#[get("/?<lat>&<lng>&<lat_delta>&<lng_delta>")]
 pub fn get_by_viewport(
     lat: f32,
     lng: f32,
-    radius: f32,
+    lat_delta: f32,
+    lng_delta: f32,
     token: BearerToken,
     mut connection: PGConnection,
 ) -> StandardResponse {
@@ -273,10 +270,10 @@ pub fn get_by_viewport(
     StandardResponse {
         status: Status::Ok,
         response: json!(Alert::get_by_viewport(
-            lat + radius,
-            lng + radius,
-            lat - radius,
-            lng - radius,
+            lat + lat_delta / 2f32,
+            lng + lng_delta / 2f32,
+            lat - lat_delta / 2f32,
+            lng - lng_delta / 2f32,
             &mut transaction
         )),
     }
